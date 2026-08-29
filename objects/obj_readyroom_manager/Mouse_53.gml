@@ -1,5 +1,5 @@
-// iOS uses the resilient dual-input path in Step_0.gml.
-if (os_type == os_ios) exit;
+// Standard mouse path remains primary on every platform.
+// Step_0.gml only supplies an iOS device_mouse fallback when this path misses an edge.
 
 if hover_card_index != -1 && !is_submenu_open{
 	if deck_slot_first_empty() != -1{
