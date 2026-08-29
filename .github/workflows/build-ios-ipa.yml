@@ -2,9 +2,6 @@ name: Build unsigned iOS IPA
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - ".github/workflows/build-ios-ipa.yml"
 
 jobs:
   build-ios:
@@ -140,11 +137,11 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Upload GameMaker Xcode export and logs
-        if: always()
+      - name: Upload GameMaker build diagnostics on failure
+        if: failure() && steps.gm.outputs.out-dir != ''
         uses: actions/upload-artifact@v4
         with:
           name: FVM-Reborn-iOS-build-diagnostics
-          path: ${{ steps.gm.outputs.out-dir || runner.temp }}
+          path: ${{ steps.gm.outputs.out-dir }}
           if-no-files-found: warn
-          retention-days: 3
+          retention-days: 1
