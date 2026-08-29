@@ -3,6 +3,23 @@ if global.is_paused{
 	exit
 }
 
+// Unified pointer edge for iOS. Standard mouse covers Magic Keyboard trackpad;
+// device_mouse covers touchscreen and survives pointer-device remapping.
+var _input_left_pressed = mouse_check_button_pressed(mb_left);
+var _input_x = mouse_x;
+var _input_y = mouse_y;
+
+if (os_type == os_ios) {
+    for (var _input_d = 0; _input_d < 8; _input_d++) {
+        if (device_mouse_check_button_pressed(_input_d, mb_left)) {
+            _input_left_pressed = true;
+            _input_x = device_mouse_x(_input_d);
+            _input_y = device_mouse_y(_input_d);
+            break;
+        }
+    }
+}
+
 if card_id != "magic_chicken"{
 	current_cost = cost
 	if ds_map_find_value(global.plus_card_map,card_id) != undefined{
@@ -49,9 +66,9 @@ if (is_hovered) {
 }
 
 // 检测鼠标点击（选中卡槽）
-if (is_ready && mouse_check_button_pressed(mb_left)) {
-    mx = mouse_x;
-    my = mouse_y;
+if (is_ready && _input_left_pressed) {
+    mx = _input_x;
+    my = _input_y;
     
     if (point_in_rectangle(mx, my, x-50, y-70, x+50, y+70)) {
 		
@@ -59,7 +76,7 @@ if (is_ready && mouse_check_button_pressed(mb_left)) {
         
         // 创建放置预览对象
         if (selected_preview == noone) {
-            selected_preview = instance_create_depth(mouse_x, mouse_y, depth-2, obj_card_preview);
+            selected_preview = instance_create_depth(_input_x, _input_y, depth-2, obj_card_preview);
             selected_preview.preview_sprite = card_spr; // 设置预览精灵
 			if place_preview != undefined{
 				selected_preview.preview_sprite = place_preview
@@ -107,8 +124,8 @@ if keyboard_check_pressed(slot_key) && is_ready{
 if (is_selected) {
     // 更新预览位置
     if (selected_preview != noone && instance_exists(selected_preview)) {
-        selected_preview.x = mouse_x;
-        selected_preview.y = mouse_y;
+        selected_preview.x = _input_x;
+        selected_preview.y = _input_y;
     }
     
     // 右键取消选择
@@ -122,7 +139,7 @@ if (is_selected) {
     }
     
     // 左键尝试放置植物
-    if (mouse_check_button_pressed(mb_left)) {
+    if (_input_left_pressed) {
         // 检查是否在可种植区域
 		
         var card_shape = get_card_info_simple(card_id).shape
@@ -140,15 +157,15 @@ if (is_selected) {
         var platform_shift_y = 0;
         var logical_col = -1;
         var logical_row = -1;
-        var grid_pos_visual = get_grid_position_from_world(mouse_x, mouse_y);
+        var grid_pos_visual = get_grid_position_from_world(_input_x, _input_y);
         var direct_in_platform = false;
 
         with (obj_platform) {
             var is_axis_x = (variable_instance_exists(id, "move_axis") && move_axis == "x");
             var shift_x = is_axis_x ? visual_x_shift : 0;
             var shift_y = (!is_axis_x) ? visual_y_shift : 0;
-            var adj_x = mouse_x - shift_x;
-            var adj_y = mouse_y - shift_y;
+            var adj_x = _input_x - shift_x;
+            var adj_y = _input_y - shift_y;
             var grid_pos_adj = get_grid_position_from_world(adj_x, adj_y);
 
             var c_off = is_axis_x ? current_offset : 0;
