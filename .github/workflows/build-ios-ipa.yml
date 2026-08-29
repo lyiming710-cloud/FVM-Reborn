@@ -1,17 +1,53 @@
-name: Build unsigned iOS IPA
-
+name: Build latest unsigned iOS IPA
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-ios-ipa.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: fvm-ios-latest
+  cancel-in-progress: true
 
 jobs:
   build-ios:
     runs-on: macos-15-intel
     timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ios-current
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Remove old IPA releases and artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # This fork uses releases only for unsigned iOS IPA delivery. Remove
+          # every previous IPA release/tag so there is never a downloadable
+          # historical build after this job starts.
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
+            --jq '.[].tagName' | while IFS= read -r tag; do
+              [ -z "$tag" ] && continue
+              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+            done
+
+          # Remove previous Actions artifacts as well, including old whole-IPAs
+          # and split IPA chunks. The current workflow publishes only a release
+          # asset, so no new IPA artifact history is created here.
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" \
+            --jq '.artifacts[].id' | while IFS= read -r artifact_id; do
+              [ -z "$artifact_id" ] && continue
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id"
+            done
 
       - name: Verify GameMaker access key
         shell: bash
@@ -127,14 +163,19 @@ jobs:
           /usr/bin/zip -qry "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" Payload
           test -s "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
           ls -lh "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
+          shasum -a 256 "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" | tee "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa.sha256"
 
-      - name: Upload unsigned IPA
-        uses: actions/upload-artifact@v4
-        with:
-          name: FVM-Reborn-unsigned-IPA
-          path: FVM-Reborn-unsigned.ipa
-          if-no-files-found: error
-          retention-days: 7
+      - name: Publish only current IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "$RELEASE_TAG" \
+            FVM-Reborn-unsigned.ipa \
+            FVM-Reborn-unsigned.ipa.sha256 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "FVM-Reborn current unsigned iOS IPA" \
+            --notes "Current unsigned iOS build from commit $GITHUB_SHA. Previous IPA releases and Actions IPA artifacts are removed before each build."
 
       - name: Upload GameMaker build diagnostics on failure
         if: failure() && steps.gm.outputs.out-dir != ''
