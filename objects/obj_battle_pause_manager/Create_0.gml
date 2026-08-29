@@ -7,3 +7,9 @@ settlement = false
 first_complete = false
 
 slot_unlock_level_id_list = ["cookie_island","salad_island_land","salad_island_water","champagne_island_land","champagne_island_water","cocoa_island_daytime","curry_island_night"]
+
+// Touch HUD virtual key state.
+virtual_pause_pressed = false;
+virtual_esc_pressed = false;
+ios_hud_prev_device0_down = false;
+ios_hud_prev_device1_down = false;
