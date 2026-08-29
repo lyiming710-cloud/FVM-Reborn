@@ -1,0 +1,48 @@
+name: Publish unsigned IPA release
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/publish-ipa-release.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: "33268845067"
+      RELEASE_TAG: "ios-unsigned-2026-08-30"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download IPA artifact from successful iOS build
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          gh run download "$SOURCE_RUN_ID"             --repo "$GITHUB_REPOSITORY"             --name "FVM-Reborn-unsigned-IPA"             --dir artifact
+          find artifact -maxdepth 2 -type f -ls
+          test -s artifact/FVM-Reborn-unsigned.ipa
+
+      - name: Create or update GitHub Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" artifact/FVM-Reborn-unsigned.ipa               --repo "$GITHUB_REPOSITORY"               --clobber
+          else
+            gh release create "$RELEASE_TAG" artifact/FVM-Reborn-unsigned.ipa               --repo "$GITHUB_REPOSITORY"               --title "FVM-Reborn unsigned iOS IPA"               --notes "Unsigned iOS IPA built from commit cbc4e3f282ad0b95ed7f9b82adafa57b5cbb9889 using GameMaker LTS 2026 runtime 2026.0.0.23 and Xcode with code signing disabled."
+          fi
+
+      - name: Print release
+        shell: bash
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url,assets
