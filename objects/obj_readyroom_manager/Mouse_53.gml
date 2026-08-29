@@ -1,3 +1,6 @@
+// iOS uses the resilient dual-input path in Step_0.gml.
+if (os_type == os_ios) exit;
+
 if hover_card_index != -1 && !is_submenu_open{
 	if deck_slot_first_empty() != -1{
 		audio_play_sound(snd_button,0,0)
