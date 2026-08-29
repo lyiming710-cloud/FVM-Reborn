@@ -1,0 +1,57 @@
+name: Publish iPad input fix IPA
+
+on:
+  push:
+    paths:
+      - ".github/workflows/publish-ipad-input-fix.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: "33271383731"
+      RELEASE_TAG: "ios-ipad-input-fix-2026-08-30"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download tested IPA artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifact
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "FVM-Reborn-unsigned-IPA" \
+            --dir artifact
+          test -s artifact/FVM-Reborn-unsigned.ipa
+          ls -lh artifact/FVM-Reborn-unsigned.ipa
+          shasum -a 256 artifact/FVM-Reborn-unsigned.ipa
+
+      - name: Publish direct IPA release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" artifact/FVM-Reborn-unsigned.ipa \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$RELEASE_TAG" artifact/FVM-Reborn-unsigned.ipa \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "cdf59c65b0a8a383f80c7fd562cc43170271aa79" \
+              --title "FVM-Reborn iPad input fix unsigned IPA" \
+              --notes "Built from commit cdf59c65b0a8a383f80c7fd562cc43170271aa79. Adds iPad battle touch controls (pause, speed, ESC, slow-time) and dual touchscreen/Magic Keyboard trackpad input recovery for pause dialogs, ready-room card selection, and battle card placement. GameMaker LTS 2026 runtime 2026.0.0.23; Xcode code signing disabled."
+          fi
+
+      - name: Show release
+        shell: bash
+        run: |
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json url,assets
