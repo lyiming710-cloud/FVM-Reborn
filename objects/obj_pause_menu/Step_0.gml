@@ -5,18 +5,18 @@ submenu_open = instance_exists(obj_config_menu) || instance_exists(obj_quit_conf
 if (!submenu_open) {
     selected_button = -1;
 
-    var mx = device_mouse_x_to_gui(0);
-    var my = device_mouse_y_to_gui(0);
+    // Keep both iPad input paths alive. Magic Keyboard trackpad can arrive
+    // through standard mouse_* while touchscreen taps arrive through
+    // device_mouse_*. Never disable one path just because we are on iOS.
+    var mx = mouse_x;
+    var my = mouse_y;
     var _released = mouse_check_button_released(mb_left);
 
-    // On iOS, use the device/touch release path directly. This avoids mixing
-    // device coordinates with the separate standard mouse release state.
     if (os_type == os_ios) {
-        _released = false;
-        for (var _d = 0; _d < 4; _d++) {
+        for (var _d = 0; _d < 8; _d++) {
             if (device_mouse_check_button_released(_d, mb_left)) {
-                mx = device_mouse_x_to_gui(_d);
-                my = device_mouse_y_to_gui(_d);
+                mx = device_mouse_x(_d);
+                my = device_mouse_y(_d);
                 _released = true;
                 break;
             }
@@ -57,9 +57,10 @@ if (!submenu_open) {
                         break;
                 }
 
-                if (os_type == os_ios) {
-                    mouse_clear(mb_any);
-                }
+                // Do not call mouse_clear() here on iOS. Clearing GameMaker's
+                // synthetic mouse state during a modal transition can leave
+                // touch/trackpad mapping without a fresh press edge after
+                // attaching or detaching Magic Keyboard.
                 audio_play_sound(snd_button,0,0);
             }
             break;
