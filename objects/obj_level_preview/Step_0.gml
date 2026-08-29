@@ -18,5 +18,9 @@ if array_length(mouse_preview_inst) == 0{
 	}
 }
 if keyboard_check_pressed(vk_escape){
-	instance_destroy()
+    keyboard_clear(vk_escape);
+    if (os_type == os_ios) {
+        mouse_clear(mb_any);
+    }
+    instance_destroy();
 }

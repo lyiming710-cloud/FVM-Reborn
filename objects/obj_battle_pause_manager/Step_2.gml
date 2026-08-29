@@ -162,24 +162,66 @@ if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
     //}
 }
 
-if (keyboard_check_pressed(vk_escape) || virtual_esc_pressed) {
+// ESC is owned by this manager only. This prevents the pause menu and
+// manager from both reacting to the same keypress in one frame.
+var _esc_key_pressed = keyboard_check_pressed(vk_escape);
+if (_esc_key_pressed || virtual_esc_pressed) {
     virtual_esc_pressed = false;
+    var _esc_handled = false;
+
     if (!global.is_paused) {
-        // ESC暂停：暂停并显示菜单
         global.is_paused = true;
         global.show_menu = true;
-        
-        // 创建暂停菜单实例
-        
-        instance_create_depth(room_width / 2, room_height / 2, depth, obj_pause_menu);
+        if (!instance_exists(obj_pause_menu)) {
+            instance_create_depth(room_width / 2, room_height / 2, depth, obj_pause_menu);
+        }
+        _esc_handled = true;
+    }
+    else if (global.is_paused && !global.show_menu) {
+        // Space-pause -> ESC opens the full pause menu.
+        global.show_menu = true;
+        if (!instance_exists(obj_pause_menu)) {
+            instance_create_depth(room_width / 2, room_height / 2, depth, obj_pause_menu);
+        }
+        _esc_handled = true;
     }
     else if (global.is_paused && global.show_menu) {
-        // 尝试关闭菜单（菜单自身会处理ESC关闭）
-        var menu = instance_find(obj_pause_menu, 0);
-        if (menu != noone && !menu.submenu_open) {
-            instance_destroy(menu);
+        // Close only the top-most modal first.
+        if (instance_exists(obj_config_menu)) {
+            instance_destroy(obj_config_menu);
+            _esc_handled = true;
+        }
+        else if (instance_exists(obj_quit_confirm)) {
+            instance_destroy(obj_quit_confirm);
+            _esc_handled = true;
+        }
+        else if (instance_exists(obj_restart_confirm)) {
+            instance_destroy(obj_restart_confirm);
+            _esc_handled = true;
+        }
+        else {
+            var _menu = instance_find(obj_pause_menu, 0);
+            if (_menu != noone) {
+                instance_destroy(_menu);
+            }
+            // Also recover from a stale show_menu flag with no menu instance.
             global.is_paused = false;
             global.show_menu = false;
+            _esc_handled = true;
+        }
+    }
+
+    if (_esc_handled) {
+        // Consume the physical ESC so another object cannot process it again
+        // later in this same step.
+        if (_esc_key_pressed) {
+            keyboard_clear(vk_escape);
+        }
+
+        // iOS can retain the standard mouse/touch down state across modal
+        // transitions. Clear it so the next tap/click starts from a clean edge.
+        if (os_type == os_ios) {
+            mouse_clear(mb_any);
         }
     }
 }
