@@ -1,0 +1,74 @@
+name: Split iPad input fix IPA for download
+
+on:
+  push:
+    paths:
+      - ".github/workflows/split-ipad-input-fix.yml"
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_RUN_ID: "33271383731"
+
+    steps:
+      - name: Download tested IPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work
+          gh run download "$SOURCE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name "FVM-Reborn-unsigned-IPA" \
+            --dir work
+          test -s work/FVM-Reborn-unsigned.ipa
+          sha256sum work/FVM-Reborn-unsigned.ipa | tee work/FVM-Reborn-unsigned.ipa.sha256
+
+      - name: Split into connector-sized chunks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p work/chunks
+          split -b 300M -a 2 work/FVM-Reborn-unsigned.ipa work/chunks/FVM-Reborn-unsigned.ipa.part-
+          ls -lh work/chunks
+          test -f work/chunks/FVM-Reborn-unsigned.ipa.part-aa
+          test -f work/chunks/FVM-Reborn-unsigned.ipa.part-ab
+          test -f work/chunks/FVM-Reborn-unsigned.ipa.part-ac
+
+      - name: Upload part aa
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPad-fix-IPA-part-aa
+          path: work/chunks/FVM-Reborn-unsigned.ipa.part-aa
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload part ab
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPad-fix-IPA-part-ab
+          path: work/chunks/FVM-Reborn-unsigned.ipa.part-ab
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload part ac
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPad-fix-IPA-part-ac
+          path: work/chunks/FVM-Reborn-unsigned.ipa.part-ac
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: iPad-fix-IPA-checksum
+          path: work/FVM-Reborn-unsigned.ipa.sha256
+          retention-days: 7
