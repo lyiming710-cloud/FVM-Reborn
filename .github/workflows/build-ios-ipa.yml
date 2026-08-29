@@ -23,7 +23,7 @@ jobs:
           ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
         run: |
           if [ -z "$ACCESS_KEY" ]; then
-            echo "::error::Missing repository secret ACCESS_KEY. Generate a GameMaker Access Key at https://gamemaker.io/account/access_keys and save it as repository Actions secret ACCESS_KEY."
+            echo "::error::Missing repository secret ACCESS_KEY. Generate a GameMaker Access Key and save it as repository Actions secret ACCESS_KEY."
             exit 1
           fi
 
@@ -75,7 +75,6 @@ jobs:
           OUT_DIR: ${{ steps.gm.outputs.out-dir }}
         run: |
           set -euo pipefail
-
           DERIVED="$RUNNER_TEMP/FVM-DerivedData"
           rm -rf "$DERIVED"
 
@@ -94,42 +93,23 @@ jobs:
             exit 1
           fi
 
-          echo "Using Xcode container: $CONTAINER"
-
           LIST_JSON="$RUNNER_TEMP/xcode-list.json"
           xcodebuild "$MODE" "$CONTAINER" -list -json > "$LIST_JSON"
           cat "$LIST_JSON"
 
-          SCHEME="$(python3 - "$LIST_JSON" <<'PY'
-import json, sys
-data=json.load(open(sys.argv[1]))
-for key in ("workspace","project"):
-    obj=data.get(key) or {}
-    schemes=obj.get("schemes") or []
-    if schemes:
-        print(schemes[0])
-        raise SystemExit
-PY
-          )"
+          SCHEME="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("workspace") or d.get("project") or {}; s=o.get("schemes") or []; print(s[0] if s else "")' "$LIST_JSON")"
 
           if [ -n "$SCHEME" ]; then
             echo "Building scheme: $SCHEME"
-            xcodebuild               "$MODE" "$CONTAINER"               -scheme "$SCHEME"               -configuration Release               -sdk iphoneos               -destination 'generic/platform=iOS'               -derivedDataPath "$DERIVED"               CODE_SIGNING_ALLOWED=NO               CODE_SIGNING_REQUIRED=NO               CODE_SIGN_IDENTITY=""               DEVELOPMENT_TEAM=""               build
+            xcodebuild "$MODE" "$CONTAINER" -scheme "$SCHEME" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
           else
-            TARGET="$(python3 - "$LIST_JSON" <<'PY'
-import json, sys
-data=json.load(open(sys.argv[1]))
-obj=data.get("project") or data.get("workspace") or {}
-targets=obj.get("targets") or []
-print(targets[0] if targets else "")
-PY
-            )"
+            TARGET="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("project") or d.get("workspace") or {}; t=o.get("targets") or []; print(t[0] if t else "")' "$LIST_JSON")"
             if [ -z "$TARGET" ]; then
               echo "::error::No Xcode scheme or target found"
               exit 1
             fi
             echo "Building target: $TARGET"
-            xcodebuild               "$MODE" "$CONTAINER"               -target "$TARGET"               -configuration Release               -sdk iphoneos               -destination 'generic/platform=iOS'               -derivedDataPath "$DERIVED"               CODE_SIGNING_ALLOWED=NO               CODE_SIGNING_REQUIRED=NO               CODE_SIGN_IDENTITY=""               DEVELOPMENT_TEAM=""               build
+            xcodebuild "$MODE" "$CONTAINER" -target "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
           fi
 
           APP="$(find "$DERIVED/Build/Products" -type d -path '*Release-iphoneos/*.app' -print -quit || true)"
@@ -142,18 +122,13 @@ PY
             exit 1
           fi
 
-          echo "Built app: $APP"
           IPA_DIR="$RUNNER_TEMP/ipa"
           rm -rf "$IPA_DIR"
           mkdir -p "$IPA_DIR/Payload"
           cp -R "$APP" "$IPA_DIR/Payload/"
-          (
-            cd "$IPA_DIR"
-            /usr/bin/zip -qry "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" Payload
-          )
-
+          cd "$IPA_DIR"
+          /usr/bin/zip -qry "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" Payload
           test -s "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
-          echo "ipa=$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" >> "$GITHUB_OUTPUT"
           ls -lh "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
 
       - name: Upload unsigned IPA
@@ -169,7 +144,6 @@ PY
         uses: actions/upload-artifact@v4
         with:
           name: FVM-Reborn-iOS-build-diagnostics
-          path: |
-            ${{ steps.gm.outputs.out-dir }}
+          path: ${{ steps.gm.outputs.out-dir }}
           if-no-files-found: warn
           retention-days: 3
