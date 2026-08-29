@@ -2,6 +2,10 @@
 // Check whether a child modal is open.
 submenu_open = instance_exists(obj_config_menu) || instance_exists(obj_quit_confirm) || instance_exists(obj_restart_confirm);
 
+if (input_guard_frames > 0) {
+    input_guard_frames -= 1;
+}
+
 if (!submenu_open) {
     selected_button = -1;
 
@@ -36,7 +40,7 @@ if (!submenu_open) {
         {
             selected_button = i;
 
-            if (_released) {
+            if (_released && input_guard_frames <= 0) {
                 switch (i) {
                     case 0: // Continue
                         instance_destroy();
