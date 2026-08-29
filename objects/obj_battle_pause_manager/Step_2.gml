@@ -1,18 +1,24 @@
-// iPad battle HUD input. Uses device_mouse_* directly so it remains usable
-// while switching between touchscreen and Magic Keyboard trackpad.
+// iPad battle HUD input. Keep standard mouse (Magic Keyboard trackpad)
+// and device_mouse (touchscreen) active at the same time.
 if (os_type == os_ios) {
-    var _d0_down = device_mouse_check_button(0, mb_left);
-    var _d1_down = device_mouse_check_button(1, mb_left);
-    var _d0_pressed = _d0_down && !ios_hud_prev_device0_down;
-    var _d1_pressed = _d1_down && !ios_hud_prev_device1_down;
+    var _gw = display_get_gui_width();
+    var _gh = display_get_gui_height();
+    var _hud_pressed = mouse_check_button_pressed(mb_left);
+    var _px = mouse_x * _gw / room_width;
+    var _py = mouse_y * _gh / room_height;
 
-    if (_d0_pressed || _d1_pressed) {
-        var _device = _d0_pressed ? 0 : 1;
-        var _px = device_mouse_x_to_gui(_device);
-        var _py = device_mouse_y_to_gui(_device);
-        var _gw = display_get_gui_width();
-        var _gh = display_get_gui_height();
+    for (var _d = 0; _d < 8; _d++) {
+        var _down = device_mouse_check_button(_d, mb_left);
+        var _edge = device_mouse_check_button_pressed(_d, mb_left) || (_down && !ios_hud_prev_down[_d]);
+        if (_edge) {
+            _hud_pressed = true;
+            _px = device_mouse_x_to_gui(_d);
+            _py = device_mouse_y_to_gui(_d);
+        }
+        ios_hud_prev_down[_d] = _down;
+    }
 
+    if (_hud_pressed) {
         var _top_x1 = 24;
         var _top_y1 = 24;
         var _top_x2 = 184;
@@ -42,9 +48,6 @@ if (os_type == os_ios) {
             }
         }
     }
-
-    ios_hud_prev_device0_down = _d0_down;
-    ios_hud_prev_device1_down = _d1_down;
 }
 
 // obj_battle_pause_manager - Step Event
@@ -218,10 +221,13 @@ if (_esc_key_pressed || virtual_esc_pressed) {
             keyboard_clear(vk_escape);
         }
 
-        // iOS can retain the standard mouse/touch down state across modal
-        // transitions. Clear it so the next tap/click starts from a clean edge.
+        // Do not clear GameMaker's synthetic mouse state here. On iPadOS that
+        // can break the mapping after Magic Keyboard attach/detach. Instead
+        // sync our own edge detector to the devices' current down state.
         if (os_type == os_ios) {
-            mouse_clear(mb_any);
+            for (var _sync_d = 0; _sync_d < 8; _sync_d++) {
+                ios_hud_prev_down[_sync_d] = device_mouse_check_button(_sync_d, mb_left);
+            }
         }
     }
 }
