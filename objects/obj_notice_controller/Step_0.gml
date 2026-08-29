@@ -1,46 +1,39 @@
 update_notices()
 
 // iPadOS touch / Magic Keyboard pointer recovery.
-// Keep the normal GameMaker Mouse event path as the primary input path.
-// Only synthesize a click when device_mouse sees a fresh press that the
-// normal mouse layer did not report.
+// Normal GameMaker Mouse events remain the primary path. device_mouse only
+// fills in a press edge when the native synthetic mouse layer misses it.
 if (os_type == os_ios) {
     var _focus_now = window_has_focus();
+
+    // Focus changes can remap pointer device slots. Resynchronise our own edge
+    // detector only; never call io_clear()/mouse_clear() here.
     if (_focus_now != ios_last_focus) {
-        io_clear();
-        ios_prev_device0_down = false;
-        ios_prev_device1_down = false;
-        ios_mouse_mismatch_frames = 0;
+        for (var _sync_d = 0; _sync_d < 8; _sync_d++) {
+            ios_prev_down[_sync_d] = device_mouse_check_button(_sync_d, mb_left);
+        }
         ios_last_focus = _focus_now;
+        exit;
     }
 
-    var _d0_down = device_mouse_check_button(0, mb_left);
-    var _d1_down = device_mouse_check_button(1, mb_left);
-    var _d0_pressed = _d0_down && !ios_prev_device0_down;
-    var _d1_pressed = _d1_down && !ios_prev_device1_down;
-    var _device_pressed = _d0_pressed || _d1_pressed;
+    var _device = -1;
+    for (var _d = 0; _d < 8; _d++) {
+        var _down = device_mouse_check_button(_d, mb_left);
+        var _edge = device_mouse_check_button_pressed(_d, mb_left) || (_down && !ios_prev_down[_d]);
+        if (_device == -1 && _edge) {
+            _device = _d;
+        }
+        ios_prev_down[_d] = _down;
+    }
+
     var _native_pressed = mouse_check_button_pressed(mb_left);
 
-    // A detached trackpad can leave the legacy mouse button state latched.
-    // Clear it once it disagrees with all device pointers for a few frames.
-    if (!_d0_down && !_d1_down && mouse_check_button(mb_left)) {
-        ios_mouse_mismatch_frames += 1;
-        if (ios_mouse_mismatch_frames >= 3) {
-            io_clear();
-            ios_mouse_mismatch_frames = 0;
-        }
-    } else {
-        ios_mouse_mismatch_frames = 0;
-    }
-
-    if (_device_pressed && !_native_pressed) {
-        var _device = _d0_pressed ? 0 : 1;
+    if (_device != -1 && !_native_pressed) {
         var _px = device_mouse_x(_device);
         var _py = device_mouse_y(_device);
 
-        // Re-fire the local Left Pressed mouse event on the top-most instance
-        // under the iPad pointer. This restores ordinary buttons that use
-        // Mouse_4.gml without changing their existing code.
+        // Re-fire the local Left Pressed event on the top-most visible instance
+        // under the physical pointer. This preserves existing button logic.
         var _hits = ds_list_create();
         collision_point_list(_px, _py, all, false, true, _hits, false);
 
@@ -61,16 +54,13 @@ if (os_type == os_ios) {
         }
         ds_list_destroy(_hits);
 
-        // These objects intentionally use Global Left Pressed (Mouse_53.gml),
-        // so mirror that event as well when the normal mouse layer misses it.
+        // These objects intentionally use Global Left Pressed. Ready-room input
+        // is excluded because obj_readyroom_manager already has its own
+        // coordinate-correct device_mouse fallback in Step_0.gml.
         with (obj_craft_bg) event_perform(ev_mouse, 53);
         with (obj_info_island_bg) event_perform(ev_mouse, 53);
         with (obj_package_bg) event_perform(ev_mouse, 53);
         with (obj_player_character) event_perform(ev_mouse, 53);
-        with (obj_readyroom_manager) event_perform(ev_mouse, 53);
         with (obj_text_input) event_perform(ev_mouse, 53);
     }
-
-    ios_prev_device0_down = _d0_down;
-    ios_prev_device1_down = _d1_down;
 }
