@@ -44,6 +44,7 @@ jobs:
         uses: bscotch/igor-setup@v3
         with:
           target-yyp: ${{ steps.project.outputs.yyp }}
+          runtime-version: 2026.0.0.23
           access-key: ${{ secrets.ACCESSKEY }}
           modules: ios
           cache: "false"
