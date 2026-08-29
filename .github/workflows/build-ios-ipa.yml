@@ -15,7 +15,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Remove old IPA releases and artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
+            --jq '.[].tagName' | while IFS= read -r tag; do
+              [ -z "$tag" ] && continue
+              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+            done
+
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" \
+            --jq '.artifacts[].id' | while IFS= read -r artifact_id; do
+              [ -z "$artifact_id" ] && continue
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id"
+            done
+
   build-ios:
+    needs: cleanup
     runs-on: macos-15-intel
     timeout-minutes: 90
     env:
@@ -25,29 +49,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Remove old IPA releases and artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          # This fork uses releases only for unsigned iOS IPA delivery. Remove
-          # every previous IPA release/tag so there is never a downloadable
-          # historical build after this job starts.
-          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
-            --jq '.[].tagName' | while IFS= read -r tag; do
-              [ -z "$tag" ] && continue
-              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
-            done
-
-          # Remove previous Actions artifacts as well, including old whole-IPAs
-          # and split IPA chunks. The current workflow publishes only a release
-          # asset, so no new IPA artifact history is created here.
-          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" \
-            --jq '.artifacts[].id' | while IFS= read -r artifact_id; do
-              [ -z "$artifact_id" ] && continue
-              gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id"
-            done
 
       - name: Verify GameMaker access key
         shell: bash
