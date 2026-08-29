@@ -1,0 +1,175 @@
+name: Build unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/build-ios-ipa.yml"
+
+jobs:
+  build-ios:
+    runs-on: macos-15
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Verify GameMaker access key
+        shell: bash
+        env:
+          ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+        run: |
+          if [ -z "$ACCESS_KEY" ]; then
+            echo "::error::Missing repository secret ACCESS_KEY. Generate a GameMaker Access Key at https://gamemaker.io/account/access_keys and save it as repository Actions secret ACCESS_KEY."
+            exit 1
+          fi
+
+      - name: Find GameMaker project
+        id: project
+        shell: bash
+        run: |
+          YYP="$(find "$GITHUB_WORKSPACE" -maxdepth 3 -name '*.yyp' -print -quit)"
+          if [ -z "$YYP" ]; then
+            echo "::error::No .yyp project found"
+            exit 1
+          fi
+          echo "Found: $YYP"
+          echo "yyp=$YYP" >> "$GITHUB_OUTPUT"
+
+      - name: Setup GameMaker Igor and iOS runtime
+        id: igor
+        uses: bscotch/igor-setup@v2
+        with:
+          target-yyp: ${{ steps.project.outputs.yyp }}
+          access-key: ${{ secrets.ACCESS_KEY }}
+          modules: ios
+          cache: "true"
+
+      - name: Export iOS Xcode project
+        id: gm
+        uses: bscotch/igor-build@v1
+        with:
+          yyp-path: ${{ steps.project.outputs.yyp }}
+          user-dir: ${{ steps.igor.outputs.user-dir }}
+          platform: ios
+          yyc: "false"
+          save-logs: "true"
+          name: FVM-Reborn.xcodeproj
+
+      - name: Inspect exported Xcode project
+        shell: bash
+        env:
+          OUT_DIR: ${{ steps.gm.outputs.out-dir }}
+        run: |
+          echo "GameMaker output: $OUT_DIR"
+          find "$OUT_DIR" -maxdepth 5 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Podfile' \) -print || true
+          xcodebuild -version
+
+      - name: Build unsigned iOS app
+        id: xcode
+        shell: bash
+        env:
+          OUT_DIR: ${{ steps.gm.outputs.out-dir }}
+        run: |
+          set -euo pipefail
+
+          DERIVED="$RUNNER_TEMP/FVM-DerivedData"
+          rm -rf "$DERIVED"
+
+          WORKSPACE="$(find "$OUT_DIR" -type d -name '*.xcworkspace' ! -path '*/project.xcworkspace' -print -quit || true)"
+          PROJECT="$(find "$OUT_DIR" -type d -name '*.xcodeproj' -print -quit || true)"
+
+          if [ -n "$WORKSPACE" ]; then
+            MODE="-workspace"
+            CONTAINER="$WORKSPACE"
+          elif [ -n "$PROJECT" ]; then
+            MODE="-project"
+            CONTAINER="$PROJECT"
+          else
+            echo "::error::GameMaker export did not contain an Xcode project/workspace"
+            find "$OUT_DIR" -maxdepth 4 -print
+            exit 1
+          fi
+
+          echo "Using Xcode container: $CONTAINER"
+
+          LIST_JSON="$RUNNER_TEMP/xcode-list.json"
+          xcodebuild "$MODE" "$CONTAINER" -list -json > "$LIST_JSON"
+          cat "$LIST_JSON"
+
+          SCHEME="$(python3 - "$LIST_JSON" <<'PY'
+import json, sys
+data=json.load(open(sys.argv[1]))
+for key in ("workspace","project"):
+    obj=data.get(key) or {}
+    schemes=obj.get("schemes") or []
+    if schemes:
+        print(schemes[0])
+        raise SystemExit
+PY
+          )"
+
+          if [ -n "$SCHEME" ]; then
+            echo "Building scheme: $SCHEME"
+            xcodebuild               "$MODE" "$CONTAINER"               -scheme "$SCHEME"               -configuration Release               -sdk iphoneos               -destination 'generic/platform=iOS'               -derivedDataPath "$DERIVED"               CODE_SIGNING_ALLOWED=NO               CODE_SIGNING_REQUIRED=NO               CODE_SIGN_IDENTITY=""               DEVELOPMENT_TEAM=""               build
+          else
+            TARGET="$(python3 - "$LIST_JSON" <<'PY'
+import json, sys
+data=json.load(open(sys.argv[1]))
+obj=data.get("project") or data.get("workspace") or {}
+targets=obj.get("targets") or []
+print(targets[0] if targets else "")
+PY
+            )"
+            if [ -z "$TARGET" ]; then
+              echo "::error::No Xcode scheme or target found"
+              exit 1
+            fi
+            echo "Building target: $TARGET"
+            xcodebuild               "$MODE" "$CONTAINER"               -target "$TARGET"               -configuration Release               -sdk iphoneos               -destination 'generic/platform=iOS'               -derivedDataPath "$DERIVED"               CODE_SIGNING_ALLOWED=NO               CODE_SIGNING_REQUIRED=NO               CODE_SIGN_IDENTITY=""               DEVELOPMENT_TEAM=""               build
+          fi
+
+          APP="$(find "$DERIVED/Build/Products" -type d -path '*Release-iphoneos/*.app' -print -quit || true)"
+          if [ -z "$APP" ]; then
+            APP="$(find "$DERIVED/Build/Products" -type d -name '*.app' -print -quit || true)"
+          fi
+          if [ -z "$APP" ]; then
+            echo "::error::Xcode build completed but no .app was found"
+            find "$DERIVED/Build/Products" -maxdepth 5 -print || true
+            exit 1
+          fi
+
+          echo "Built app: $APP"
+          IPA_DIR="$RUNNER_TEMP/ipa"
+          rm -rf "$IPA_DIR"
+          mkdir -p "$IPA_DIR/Payload"
+          cp -R "$APP" "$IPA_DIR/Payload/"
+          (
+            cd "$IPA_DIR"
+            /usr/bin/zip -qry "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" Payload
+          )
+
+          test -s "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
+          echo "ipa=$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" >> "$GITHUB_OUTPUT"
+          ls -lh "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: FVM-Reborn-unsigned-IPA
+          path: FVM-Reborn-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Upload GameMaker Xcode export and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: FVM-Reborn-iOS-build-diagnostics
+          path: |
+            ${{ steps.gm.outputs.out-dir }}
+          if-no-files-found: warn
+          retention-days: 3
