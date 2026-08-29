@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    runs-on: macos-15-intel
     timeout-minutes: 90
 
     steps:
@@ -46,7 +46,7 @@ jobs:
           target-yyp: ${{ steps.project.outputs.yyp }}
           access-key: ${{ secrets.ACCESSKEY }}
           modules: ios
-          cache: "true"
+          cache: "false"
 
       - name: Export iOS Xcode project
         id: gm
