@@ -42,7 +42,6 @@ is_submenu_open = instance_exists(obj_quit_confirm) || instance_exists(obj_level
 // Magic Keyboard attach/detach.
 if (os_type == os_ios) {
     var _standard_pressed = mouse_check_button_pressed(mb_left);
-    var _press = _standard_pressed;
     var _device_edge = false;
     var _px = mouse_x;
     var _py = mouse_y;
@@ -51,7 +50,6 @@ if (os_type == os_ios) {
         var _down = device_mouse_check_button(_d, mb_left);
         var _edge = device_mouse_check_button_pressed(_d, mb_left) || (_down && !ios_ready_prev_down[_d]);
         if (_edge) {
-            _press = true;
             _device_edge = true;
             _px = device_mouse_x(_d);
             _py = device_mouse_y(_d);
