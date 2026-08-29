@@ -59,7 +59,10 @@ if (os_type == os_ios) {
         ios_ready_prev_down[_d] = _down;
     }
 
-    if (_press && !is_submenu_open) {
+    // Only take over when device_mouse sees a real edge that the standard
+    // synthetic mouse path missed. Otherwise leave the original Mouse events
+    // fully in control, avoiding duplicate card/button activations.
+    if (_device_edge && !_standard_pressed && !is_submenu_open) {
         var _handled = false;
 
         // Select a card directly from its screen-space slot.
@@ -124,9 +127,9 @@ if (os_type == os_ios) {
             _handled = true;
         }
 
-        // If only device_mouse produced the edge, legacy object Mouse events
-        // may not fire. Reproduce the small set of ready-room button actions.
-        if (_device_edge && !_standard_pressed && !_handled) {
+        // Legacy object Mouse events did not receive this edge, so reproduce
+        // the small set of ready-room button actions.
+        if (!_handled) {
             var _hit = instance_position(_px, _py, obj_battlestart_button);
             if (_hit != noone) {
                 if (deck_slot_count() > 0) {
