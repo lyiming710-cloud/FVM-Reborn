@@ -1,16 +1,15 @@
 // Modal Step Event
 selected_button = -1;
 
-var mx = device_mouse_x_to_gui(0);
-var my = device_mouse_y_to_gui(0);
+var mx = mouse_x;
+var my = mouse_y;
 var _released = mouse_check_button_released(mb_left);
 
 if (os_type == os_ios) {
-    _released = false;
-    for (var _d = 0; _d < 4; _d++) {
+    for (var _d = 0; _d < 8; _d++) {
         if (device_mouse_check_button_released(_d, mb_left)) {
-            mx = device_mouse_x_to_gui(_d);
-            my = device_mouse_y_to_gui(_d);
+            mx = device_mouse_x(_d);
+            my = device_mouse_y(_d);
             _released = true;
             break;
         }
@@ -39,18 +38,12 @@ for (var i = 0; i < array_length(buttons); i++) {
                     if (instance_exists(obj_world_map_button)) {
                         obj_world_map_button.world_map = 0;
                     }
-                    if (os_type == os_ios) {
-                        mouse_clear(mb_any);
-                    }
                     instance_destroy();
                     break;
 
                 case 0: // Confirm
                     if (instance_exists(obj_player_info_ui)) {
                         obj_player_info_ui.menu_type = 0;
-                    }
-                    if (os_type == os_ios) {
-                        mouse_clear(mb_any);
                     }
                     room_restart();
                     break;
@@ -64,8 +57,5 @@ for (var i = 0; i < array_length(buttons); i++) {
 // Consume ESC locally if this modal gets it before its parent manager.
 if (keyboard_check_pressed(vk_escape)) {
     keyboard_clear(vk_escape);
-    if (os_type == os_ios) {
-        mouse_clear(mb_any);
-    }
     instance_destroy();
 }
