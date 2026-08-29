@@ -1,6 +1,5 @@
 name: Build unsigned iOS IPA
 
-# source-input-fix: ios-input-recovery-20260830
 
 on:
   workflow_dispatch:
@@ -13,8 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          lfs: true
 
       - name: Verify GameMaker access key
         shell: bash
@@ -22,7 +19,7 @@ jobs:
           ACCESSKEY: ${{ secrets.ACCESSKEY }}
         run: |
           if [ -z "$ACCESSKEY" ]; then
-            echo "::error::Missing repository secret ACCESSKEY. Generate a GameMaker Access Key and save it as repository Actions secret ACCESS_KEY."
+            echo "::error::Missing repository secret ACCESSKEY. Generate a GameMaker Access Key and save it as repository Actions secret ACCESSKEY."
             exit 1
           fi
 
