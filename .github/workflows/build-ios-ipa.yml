@@ -1,6 +1,6 @@
 name: Build unsigned iOS IPA
 
-# source-input-fix: ios-input-fix-1788032286213
+# source-input-fix: ios-input-recovery-20260830
 
 on:
   workflow_dispatch:
