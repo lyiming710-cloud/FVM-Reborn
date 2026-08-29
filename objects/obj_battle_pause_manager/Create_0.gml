@@ -11,5 +11,6 @@ slot_unlock_level_id_list = ["cookie_island","salad_island_land","salad_island_w
 // Touch HUD virtual key state.
 virtual_pause_pressed = false;
 virtual_esc_pressed = false;
-ios_hud_prev_device0_down = false;
-ios_hud_prev_device1_down = false;
+// Track several touch/pointer device slots. iPadOS may remap the active
+// pointer slot when Magic Keyboard is attached/detached.
+ios_hud_prev_down = array_create(8, false);
