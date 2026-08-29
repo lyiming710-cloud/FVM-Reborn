@@ -1,10 +1,7 @@
 depth = -9900
 
-// iPadOS input bridge state.
-// GameMaker's Mouse events can desynchronise when switching between touch and
-// an attached trackpad/keyboard. Track device state independently so we can
-// recover only when the native mouse layer misses a press.
-ios_prev_device0_down = false;
-ios_prev_device1_down = false;
-ios_mouse_mismatch_frames = 0;
+// iPadOS pointer fallback state.
+// Track GameMaker device_mouse slots without clearing the engine's synthetic
+// mouse state. This lets touch and Magic Keyboard trackpad coexist safely.
+ios_prev_down = array_create(8, false);
 ios_last_focus = window_has_focus();
