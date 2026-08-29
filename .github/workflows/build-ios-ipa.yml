@@ -41,7 +41,7 @@ jobs:
 
       - name: Setup GameMaker Igor and iOS runtime
         id: igor
-        uses: bscotch/igor-setup@v2
+        uses: bscotch/igor-setup@v3
         with:
           target-yyp: ${{ steps.project.outputs.yyp }}
           access-key: ${{ secrets.ACCESSKEY }}
