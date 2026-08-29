@@ -1,5 +1,55 @@
+// iPad battle HUD input. Uses device_mouse_* directly so it remains usable
+// while switching between touchscreen and Magic Keyboard trackpad.
+if (os_type == os_ios) {
+    var _d0_down = device_mouse_check_button(0, mb_left);
+    var _d1_down = device_mouse_check_button(1, mb_left);
+    var _d0_pressed = _d0_down && !ios_hud_prev_device0_down;
+    var _d1_pressed = _d1_down && !ios_hud_prev_device1_down;
+
+    if (_d0_pressed || _d1_pressed) {
+        var _device = _d0_pressed ? 0 : 1;
+        var _px = device_mouse_x_to_gui(_device);
+        var _py = device_mouse_y_to_gui(_device);
+        var _gw = display_get_gui_width();
+        var _gh = display_get_gui_height();
+
+        var _top_x1 = 24;
+        var _top_y1 = 24;
+        var _top_x2 = 184;
+        var _top_y2 = 94;
+
+        var _bottom_y1 = _gh - 98;
+        var _bottom_y2 = _gh - 28;
+        var _speed_x1 = 24;
+        var _speed_x2 = 184;
+        var _esc_x1 = 198;
+        var _esc_x2 = 358;
+        var _slow_x1 = 372;
+        var _slow_x2 = 532;
+
+        if (_px >= _top_x1 && _px <= _top_x2 && _py >= _top_y1 && _py <= _top_y2) {
+            virtual_pause_pressed = true;
+        }
+        else if (_py >= _bottom_y1 && _py <= _bottom_y2) {
+            if (_px >= _speed_x1 && _px <= _speed_x2) {
+                with (obj_battle) virtual_speed_pressed = true;
+            }
+            else if (_px >= _esc_x1 && _px <= _esc_x2) {
+                virtual_esc_pressed = true;
+            }
+            else if (_px >= _slow_x1 && _px <= _slow_x2) {
+                with (obj_battle) virtual_slow_pressed = true;
+            }
+        }
+    }
+
+    ios_hud_prev_device0_down = _d0_down;
+    ios_hud_prev_device1_down = _d1_down;
+}
+
 // obj_battle_pause_manager - Step Event
-if (keyboard_check_pressed(vk_space)) {	
+if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
+    virtual_pause_pressed = false;	
     //if global.selected_slot == noone {
         if (!global.is_paused) {
             // 空格暂停：只暂停不显示菜单
@@ -112,7 +162,8 @@ if (keyboard_check_pressed(vk_space)) {
     //}
 }
 
-if (keyboard_check_pressed(vk_escape)) {
+if (keyboard_check_pressed(vk_escape) || virtual_esc_pressed) {
+    virtual_esc_pressed = false;
     if (!global.is_paused) {
         // ESC暂停：暂停并显示菜单
         global.is_paused = true;
