@@ -21,3 +21,6 @@ submenu_open = false; // 是否有子菜单打开
 button_normal = 0; // 普通状态
 button_hover = 1; // 悬停状态
 button_pressed = 2; // 按下状态
+
+// Prevent the input edge that opened this modal from clicking through it.
+input_guard_frames = (os_type == os_ios) ? 2 : 0;
