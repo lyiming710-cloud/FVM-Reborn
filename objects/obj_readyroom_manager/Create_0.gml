@@ -27,6 +27,11 @@ y_offset = 0
 
 is_submenu_open = false
 
+// iOS fallback input state. GameMaker can stop dispatching legacy Mouse events
+// after an ESC modal or Magic Keyboard attach/detach, while device_mouse still
+// reports the physical touch/pointer state.
+ios_ready_prev_down = array_create(8, false);
+
 deck_first_slot_index = 0
 
 selected_custom_deck = 0
