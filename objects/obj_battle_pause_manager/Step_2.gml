@@ -1,6 +1,6 @@
 // iPad battle HUD consumes the same per-frame pointer edge as cards/shovel.
-// Bottom-left vertical stack: ESC (bottom), pause, speed, slow-time switch (top).
-// Only ESC exists outside battle; the other three controls are battle-only.
+// Bottom-left vertical stack: ESC (bottom), speed (middle), card-slow switch (top).
+// ESC is persistent. Speed/slow are available only while battle is running.
 if (os_type == os_ios && instance_exists(obj_battle)) {
     var _gh = display_get_gui_height();
     var _hud_pressed = global.pointer_input.pressed && !global.pointer_input.consumed;
@@ -13,24 +13,16 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
 
         var _esc_y1 = _gh - 98;
         var _esc_y2 = _gh - 28;
-        var _pause_y1 = _gh - 182;
-        var _pause_y2 = _gh - 112;
-        var _speed_y1 = _gh - 266;
-        var _speed_y2 = _gh - 196;
-        var _slow_y1 = _gh - 350;
-        var _slow_y2 = _gh - 280;
+        var _speed_y1 = _gh - 182;
+        var _speed_y2 = _gh - 112;
+        var _slow_y1 = _gh - 266;
+        var _slow_y2 = _gh - 196;
 
         if (_px >= _x1 && _px <= _x2 && _py >= _esc_y1 && _py <= _esc_y2) {
             virtual_esc_pressed = true;
             global.pointer_input.consumed = true;
         }
-        else if (!global.show_menu &&
-                 _px >= _x1 && _px <= _x2 &&
-                 _py >= _pause_y1 && _py <= _pause_y2) {
-            virtual_pause_pressed = true;
-            global.pointer_input.consumed = true;
-        }
-        else if (!global.show_menu &&
+        else if (!global.is_paused && !global.show_menu &&
                  _px >= _x1 && _px <= _x2 &&
                  _py >= _speed_y1 && _py <= _speed_y2) {
             with (obj_battle) {
@@ -39,7 +31,7 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
             }
             global.pointer_input.consumed = true;
         }
-        else if (!global.show_menu &&
+        else if (!global.is_paused && !global.show_menu &&
                  _px >= _x1 && _px <= _x2 &&
                  _py >= _slow_y1 && _py <= _slow_y2) {
             with (obj_battle) {
@@ -52,8 +44,7 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
 }
 
 // obj_battle_pause_manager - Step Event
-if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
-    virtual_pause_pressed = false;
+if (keyboard_check_pressed(vk_space)) {
     //if global.selected_slot == noone {
         if (!global.is_paused) {
             battle_cancel_selected_tool();

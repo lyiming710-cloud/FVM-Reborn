@@ -8,7 +8,6 @@ first_complete = false
 
 slot_unlock_level_id_list = ["cookie_island","salad_island_land","salad_island_water","champagne_island_land","champagne_island_water","cocoa_island_daytime","curry_island_night"]
 
-// Touch HUD virtual key state.
-virtual_pause_pressed = false;
+// Touch HUD virtual key state. ESC is the only control that remains visible
+// while the battle is paused or a pause-menu modal is open.
 virtual_esc_pressed = false;
-virtual_pause_pressed = false;
