@@ -1,22 +1,18 @@
-/// @desc Restore the effective battle speed without losing the player's
-/// normal, 2x or manual 0.5x selection.
+/// @desc Apply normal/2x speed, with optional 0.1x slowdown while a plant card is held.
 function battle_apply_speed() {
     var _battle = instance_find(obj_battle, 0);
     if (_battle == noone) return;
 
     with (_battle) {
-        var _target_fps = 60;
-        if (card_hold_active) {
-            // Keep pointer input responsive while making the battlefield
-            // effectively stop as a card or the shovel is being aimed.
+        var _target_fps = speed_up ? 120 : 60;
+
+        // Slow only while a plant card is selected, and only when the HUD
+        // "缓时" switch is enabled. Turning the switch off leaves normal/2x
+        // speed untouched even while the card remains selected.
+        if (card_hold_active && card_slow_enabled) {
             _target_fps = 6;
         }
-        else if (slow_time) {
-            _target_fps = 30;
-        }
-        else if (speed_up) {
-            _target_fps = 120;
-        }
+
         game_set_speed(_target_fps, gamespeed_fps);
     }
 }
@@ -36,7 +32,7 @@ function battle_end_tool_hold() {
 }
 
 /// @desc Cancel any held card/shovel. Used by ESC and pause so the pause UI
-/// never inherits the 0.1x aiming speed.
+/// never inherits the optional 0.1x card-selection speed.
 function battle_cancel_selected_tool() {
     if (variable_global_exists("selected_slot")) {
         var _slot = global.selected_slot;
