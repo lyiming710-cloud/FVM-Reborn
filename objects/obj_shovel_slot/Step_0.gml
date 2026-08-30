@@ -9,6 +9,9 @@ var _input_y = (os_type == os_ios) ? global.pointer_input.y : mouse_y;
 var _input_left_pressed = (os_type == os_ios)
     ? (global.pointer_input.pressed && !global.pointer_input.consumed)
     : mouse_check_button_pressed(mb_left);
+var _clicked_tool_slot = _input_left_pressed
+    ? battle_tool_slot_at_point(_input_x, _input_y)
+    : noone;
 
 // 再次点击铲子槽会把铲子放回去。
 if (_input_left_pressed) {
@@ -40,7 +43,8 @@ if ((mouse_check_button_pressed(mb_right) or keyboard_check_pressed(vk_escape)) 
     deselect_shovel();
 }
 // 在铲子槽对象 (obj_shovel_slot) 的鼠标点击处理中添加:
-if ((is_selected && _input_left_pressed) or (is_selected && global.quick_placement && hotkey_pressed)) {
+if ((is_selected && _input_left_pressed && _clicked_tool_slot == noone) or
+    (is_selected && global.quick_placement && hotkey_pressed)) {
     if (os_type == os_ios && _input_left_pressed) global.pointer_input.consumed = true;
     var found_plat = noone;
     var platform_shift_x = 0;

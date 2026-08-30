@@ -5,4 +5,5 @@ function deselect_shovel() {
         hotkey_pressed = false;
     }
     global.selected_slot = noone;
+    battle_end_tool_hold();
 }

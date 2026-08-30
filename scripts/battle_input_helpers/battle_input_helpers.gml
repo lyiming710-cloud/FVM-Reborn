@@ -32,6 +32,31 @@ function battle_end_tool_hold() {
     battle_apply_speed();
 }
 
+/// @desc Return the card/shovel slot under a battle pointer position. A held
+/// tool uses this to leave UI clicks for the clicked slot instead of treating
+/// them as placement/removal clicks on the battlefield.
+function battle_tool_slot_at_point(_pointer_x, _pointer_y) {
+    var _card_count = instance_number(obj_card_slot);
+    for (var _i = 0; _i < _card_count; _i++) {
+        var _slot = instance_find(obj_card_slot, _i);
+        if (_slot != noone &&
+            point_in_rectangle(_pointer_x, _pointer_y,
+                _slot.x - 50, _slot.y - 70, _slot.x + 50, _slot.y + 70)) {
+            return _slot;
+        }
+    }
+
+    var _shovel_slot = instance_find(obj_shovel_slot, 0);
+    if (_shovel_slot != noone &&
+        point_in_rectangle(_pointer_x, _pointer_y,
+            _shovel_slot.x, _shovel_slot.y,
+            _shovel_slot.x + 150, _shovel_slot.y + 150)) {
+        return _shovel_slot;
+    }
+
+    return noone;
+}
+
 /// @desc Cancel any held card/shovel. Used by ESC and pause so the pause UI
 /// never inherits the optional 0.1x card-selection simulation speed.
 function battle_cancel_selected_tool() {

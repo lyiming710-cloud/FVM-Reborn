@@ -9,6 +9,9 @@ var _input_y = (os_type == os_ios) ? global.pointer_input.y : mouse_y;
 var _input_left_pressed = (os_type == os_ios)
     ? (global.pointer_input.pressed && !global.pointer_input.consumed)
     : mouse_check_button_pressed(mb_left);
+var _clicked_tool_slot = _input_left_pressed
+    ? battle_tool_slot_at_point(_input_x, _input_y)
+    : noone;
 
 if card_id != "magic_chicken"{
 	current_cost = cost
@@ -126,7 +129,7 @@ if (is_selected) {
 	    }
     
     // 左键尝试放置植物
-	    if (_input_left_pressed) {
+	    if (_input_left_pressed && _clicked_tool_slot == noone) {
 		if (os_type == os_ios) global.pointer_input.consumed = true;
         // 检查是否在可种植区域
 		
