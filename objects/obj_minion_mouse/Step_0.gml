@@ -1,3 +1,7 @@
+if global.is_paused{
+	exit
+}
+
 // Inherit the parent event
 if not summon{
 	state = ENEMY_STATE.ACTING
