@@ -1,6 +1,12 @@
 // STEP 事件
 if global.is_paused{
-	exit
+    // GameMaker still applies built-in hspeed/vspeed/gravity on paused
+    // physical frames. Undo that engine-side motion so 0.1x simulation
+    // skipping does not make coins fall at the full 120 FPS rate.
+    x -= hspeed
+    y -= vspeed
+    vspeed -= gravity
+    exit
 }
 // 只在落地后开始消失计时
 if (is_landed && !is_collected) {
@@ -19,18 +25,18 @@ if (!is_landed) {
     // 应用重力（仅对植物生产的阳光）
     if (mode == 1) {
         //velocity_y += gravity;
-		gravity = 0.5
-		velocity_x = 0
-		velocity_y = 0
+        gravity = 0.5
+        velocity_x = 0
+        velocity_y = 0
     }
-	else {
-		gravity = 0
-		hspeed = 0
-		vspeed = 0
-		velocity_y = 3
-		ground_level = ground_level1
-		x = x1
-	}
+    else {
+        gravity = 0
+        hspeed = 0
+        vspeed = 0
+        velocity_y = 3
+        ground_level = ground_level1
+        x = x1
+    }
     
     // 更新位置
     x += velocity_x;
@@ -67,7 +73,7 @@ if (!is_collected) {
 // 收集动画
 if (is_collected) {
     collect_timer++;
-	image_speed = 1
+    image_speed = 1
     //var t = collect_timer / collect_duration;
     
     // 缓动函数
