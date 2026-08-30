@@ -11,3 +11,4 @@ slot_unlock_level_id_list = ["cookie_island","salad_island_land","salad_island_w
 // Touch HUD virtual key state.
 virtual_pause_pressed = false;
 virtual_esc_pressed = false;
+virtual_pause_pressed = false;
