@@ -1,22 +1,10 @@
-// iPad battle HUD input. Keep standard mouse (Magic Keyboard trackpad)
-// and device_mouse (touchscreen) active at the same time.
+// iPad battle HUD consumes the same per-frame pointer edge as cards/shovel.
 if (os_type == os_ios) {
     var _gw = display_get_gui_width();
     var _gh = display_get_gui_height();
-    var _hud_pressed = mouse_check_button_pressed(mb_left);
-    var _px = mouse_x * _gw / room_width;
-    var _py = mouse_y * _gh / room_height;
-
-    for (var _d = 0; _d < 8; _d++) {
-        var _down = device_mouse_check_button(_d, mb_left);
-        var _edge = device_mouse_check_button_pressed(_d, mb_left) || (_down && !ios_hud_prev_down[_d]);
-        if (_edge) {
-            _hud_pressed = true;
-            _px = device_mouse_x_to_gui(_d);
-            _py = device_mouse_y_to_gui(_d);
-        }
-        ios_hud_prev_down[_d] = _down;
-    }
+    var _hud_pressed = global.pointer_input.pressed && !global.pointer_input.consumed;
+    var _px = global.pointer_input.gui_x;
+    var _py = global.pointer_input.gui_y;
 
     if (_hud_pressed) {
         var _top_x1 = 24;
@@ -35,16 +23,20 @@ if (os_type == os_ios) {
 
         if (_px >= _top_x1 && _px <= _top_x2 && _py >= _top_y1 && _py <= _top_y2) {
             virtual_pause_pressed = true;
+            global.pointer_input.consumed = true;
         }
         else if (_py >= _bottom_y1 && _py <= _bottom_y2) {
             if (_px >= _speed_x1 && _px <= _speed_x2) {
                 with (obj_battle) virtual_speed_pressed = true;
+                global.pointer_input.consumed = true;
             }
             else if (_px >= _esc_x1 && _px <= _esc_x2) {
                 virtual_esc_pressed = true;
+                global.pointer_input.consumed = true;
             }
             else if (_px >= _slow_x1 && _px <= _slow_x2) {
                 with (obj_battle) virtual_slow_pressed = true;
+                global.pointer_input.consumed = true;
             }
         }
     }
@@ -55,6 +47,7 @@ if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
     virtual_pause_pressed = false;	
     //if global.selected_slot == noone {
         if (!global.is_paused) {
+            battle_cancel_selected_tool();
             // 空格暂停：只暂停不显示菜单
             global.is_paused = true;
             global.show_menu = false;
@@ -172,6 +165,9 @@ if (_esc_key_pressed || virtual_esc_pressed) {
     virtual_esc_pressed = false;
     var _esc_handled = false;
 
+    // ESC always puts a held card/shovel back before opening the menu.
+    battle_cancel_selected_tool();
+
     if (!global.is_paused) {
         global.is_paused = true;
         global.show_menu = true;
@@ -219,15 +215,6 @@ if (_esc_key_pressed || virtual_esc_pressed) {
         // later in this same step.
         if (_esc_key_pressed) {
             keyboard_clear(vk_escape);
-        }
-
-        // Do not clear GameMaker's synthetic mouse state here. On iPadOS that
-        // can break the mapping after Magic Keyboard attach/detach. Instead
-        // sync our own edge detector to the devices' current down state.
-        if (os_type == os_ios) {
-            for (var _sync_d = 0; _sync_d < 8; _sync_d++) {
-                ios_hud_prev_down[_sync_d] = device_mouse_check_button(_sync_d, mb_left);
-            }
         }
     }
 }

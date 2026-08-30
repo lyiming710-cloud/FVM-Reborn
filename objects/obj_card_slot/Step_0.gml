@@ -3,22 +3,11 @@ if global.is_paused{
 	exit
 }
 
-// Unified pointer edge for iOS. Standard mouse covers Magic Keyboard trackpad;
-// device_mouse covers touchscreen and survives pointer-device remapping.
-var _input_left_pressed = mouse_check_button_pressed(mb_left);
-var _input_x = mouse_x;
-var _input_y = mouse_y;
-
-if (os_type == os_ios) {
-    for (var _input_d = 0; _input_d < 8; _input_d++) {
-        if (device_mouse_check_button_pressed(_input_d, mb_left)) {
-            _input_left_pressed = true;
-            _input_x = device_mouse_x(_input_d);
-            _input_y = device_mouse_y(_input_d);
-            break;
-        }
-    }
-}
+var _input_x = (os_type == os_ios) ? global.pointer_input.x : mouse_x;
+var _input_y = (os_type == os_ios) ? global.pointer_input.y : mouse_y;
+var _input_left_pressed = (os_type == os_ios)
+    ? (global.pointer_input.pressed && !global.pointer_input.consumed)
+    : mouse_check_button_pressed(mb_left);
 
 if card_id != "magic_chicken"{
 	current_cost = cost
@@ -54,8 +43,8 @@ if cooldown_timer < cooldown{
 }
 
 // 检测鼠标悬停（用于显示提示）
-var mx = device_mouse_x_to_gui(0);
-var my = device_mouse_y_to_gui(0);
+var mx = _input_x;
+var my = _input_y;
 var is_hovered = point_in_rectangle(mx, my, x-42, y-55, x+42, y+50);
 
 // 控制悬停提示透明度
@@ -65,25 +54,28 @@ if (is_hovered) {
     hover_alpha = 0
 }
 
-// 检测鼠标点击（选中卡槽）
-if (is_ready && _input_left_pressed) {
+// 点击已拿起卡片的原卡槽会放回卡片；点击未选中的可用卡槽会拿起。
+if (_input_left_pressed) {
     mx = _input_x;
     my = _input_y;
     
     if (point_in_rectangle(mx, my, x-50, y-70, x+50, y+70)) {
-		
-        select_slot()
-        
-        // 创建放置预览对象
-        if (selected_preview == noone) {
-            selected_preview = instance_create_depth(_input_x, _input_y, depth-2, obj_card_preview);
-            selected_preview.preview_sprite = card_spr; // 设置预览精灵
-			if place_preview != undefined{
-				selected_preview.preview_sprite = place_preview
-			}
-            selected_preview.parent_slot = id; // 设置父卡槽
-			selected_preview.card_id = card_id
-        }
+		if (os_type == os_ios) global.pointer_input.consumed = true;
+		_input_left_pressed = false;
+
+		if (is_selected) {
+			deselect_slot();
+		}
+		else if (is_ready) {
+	        select_slot();
+	        if (selected_preview == noone) {
+	            selected_preview = instance_create_depth(_input_x, _input_y, depth-2, obj_card_preview);
+	            selected_preview.preview_sprite = card_spr;
+				if (place_preview != undefined) selected_preview.preview_sprite = place_preview;
+	            selected_preview.parent_slot = id;
+				selected_preview.card_id = card_id;
+	        }
+		}
     }
 }
 
@@ -110,14 +102,9 @@ if keyboard_check_pressed(slot_key) && is_ready{
 		        }
 			}
 		}
-		else{
-			is_selected = false;
-	        if (selected_preview != noone && instance_exists(selected_preview)) {
-	            instance_destroy(selected_preview);
-	        }
-	        selected_preview = noone;
-	        global.selected_slot = noone;
-		}
+			else{
+				deselect_slot();
+			}
     }
 
 // 如果当前卡槽被选中，处理放置逻辑
@@ -129,17 +116,13 @@ if (is_selected) {
     }
     
     // 右键取消选择
-    if (mouse_check_button_pressed(mb_right)) or (keyboard_check_pressed(vk_escape)) {
-        is_selected = false;
-        if (selected_preview != noone && instance_exists(selected_preview)) {
-            instance_destroy(selected_preview);
-        }
-        selected_preview = noone;
-        global.selected_slot = noone;
-    }
+	    if (mouse_check_button_pressed(mb_right)) or (keyboard_check_pressed(vk_escape)) {
+	        deselect_slot();
+	    }
     
     // 左键尝试放置植物
-    if (_input_left_pressed) {
+	    if (_input_left_pressed) {
+		if (os_type == os_ios) global.pointer_input.consumed = true;
         // 检查是否在可种植区域
 		
         var card_shape = get_card_info_simple(card_id).shape
@@ -271,14 +254,8 @@ if (is_selected) {
 			else if global.grid_terrains[logical_row][logical_col].type == "water"{
 				audio_play_sound(snd_enter_water,0,0)
 			}
-            // 取消选择
-            is_selected = false;
-            if (selected_preview != noone && instance_exists(selected_preview)) {
-                instance_destroy(selected_preview);
-            }
-            selected_preview = noone;
-            global.selected_slot = noone;
-        }
+	            deselect_slot();
+	        }
     }
 }
 

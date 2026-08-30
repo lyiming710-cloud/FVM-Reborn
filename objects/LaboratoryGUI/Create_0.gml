@@ -116,8 +116,12 @@ function create_widgets() {
         .set_should_correspond(method({gui_state: self.state}, function() {
             return gui_state.current_stage_id == ""
         }))
-        .set_on_click(method({}, function() {
-            var _target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\laboratory")
+	        .set_on_click(method({}, function() {
+			if (os_type != os_windows) {
+				show_notice("当前平台暂不支持直接打开实验室文件夹", 120)
+				return
+			}
+	            var _target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\laboratory")
             var _error_code = native_open_folder(_target)
             if (_error_code != 0) {
                 global.native_util.show_error(_error_code, "打开实验室文件夹失败")

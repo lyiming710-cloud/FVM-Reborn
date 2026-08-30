@@ -1363,6 +1363,7 @@
     {"id":{"name":"scribble_whitelist_sound","path":"scripts/scribble_whitelist_sound/scribble_whitelist_sound.yy",},},
     {"id":{"name":"scribble_whitelist_sprite","path":"scripts/scribble_whitelist_sprite/scribble_whitelist_sprite.yy",},},
     {"id":{"name":"scribble","path":"scripts/scribble/scribble.yy",},},
+    {"id":{"name":"battle_input_helpers","path":"scripts/battle_input_helpers/battle_input_helpers.yy",},},
     {"id":{"name":"select_shovel","path":"scripts/select_shovel/select_shovel.yy",},},
     {"id":{"name":"shop_init","path":"scripts/shop_init/shop_init.yy",},},
     {"id":{"name":"show_notice","path":"scripts/show_notice/show_notice.yy",},},

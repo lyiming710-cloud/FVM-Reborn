@@ -111,30 +111,17 @@ if time_limit > 0{
 
 if keyboard_check_pressed(vk_shift) || keyboard_check_pressed(vk_lshift) || virtual_speed_pressed{
     virtual_speed_pressed = false
-    slow_time = false
-    speed_up = not speed_up
-    if speed_up{
-        game_set_speed(120,gamespeed_fps)
-    }
-    else{
-        game_set_speed(60,gamespeed_fps)
-    }
+	    slow_time = false
+	    speed_up = not speed_up
+	    battle_apply_speed();
 }
 
 // iPad touch HUD slow-time toggle (0.5x). Turning it off restores the
 // currently selected normal/2x speed.
 if virtual_slow_pressed{
     virtual_slow_pressed = false
-    slow_time = not slow_time
-    if slow_time{
-        game_set_speed(30,gamespeed_fps)
-    }
-    else if speed_up{
-        game_set_speed(120,gamespeed_fps)
-    }
-    else{
-        game_set_speed(60,gamespeed_fps)
-    }
+	    slow_time = not slow_time
+	    battle_apply_speed();
 }
 
 if battle_time >= (global.level_file.first_wave_delay * 60) && level_stage == "ready" {

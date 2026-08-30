@@ -20,17 +20,5 @@ if array_length(mouse_preview_inst) == 0{
 if keyboard_check_pressed(vk_escape){
     keyboard_clear(vk_escape);
 
-    // Never clear GameMaker's synthetic mouse state on iOS. Closing this
-    // ready-room preview used to call mouse_clear(mb_any), which can strand
-    // both touchscreen and Magic Keyboard trackpad input until the pointer
-    // device is recreated.
-    if (os_type == os_ios && instance_exists(obj_readyroom_manager)) {
-        with (obj_readyroom_manager) {
-            for (var _sync_d = 0; _sync_d < 8; _sync_d++) {
-                ios_ready_prev_down[_sync_d] = device_mouse_check_button(_sync_d, mb_left);
-            }
-        }
-    }
-
-    instance_destroy();
+	    instance_destroy();
 }

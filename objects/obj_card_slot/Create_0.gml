@@ -30,24 +30,33 @@ image_speed = 0
 cooldown_ignore_list = ["ice_cream","magic_chicken"]
 
 //选择卡槽逻辑
-function select_slot(){
-	// 选中当前卡槽
-        is_selected = true;
-        
-        // 如果有全局选中卡槽，取消其选中状态
-		var shovel_slot = instance_find(obj_shovel_slot, 0);
-        if (instance_exists(shovel_slot) && shovel_slot.is_selected) {
-            deselect_shovel();
-        }
-        if (global.selected_slot != noone && global.selected_slot != id) {
-            global.selected_slot.is_selected = false;
-            instance_destroy(global.selected_slot.selected_preview);
-            global.selected_slot.selected_preview = noone;
-        }
-        audio_play_sound(snd_card_lift,0,0)
-        // 设置全局选中卡槽为当前卡槽
-        global.selected_slot = id;
-}
+	function select_slot(){
+	        // 如果有全局选中卡槽，先完整取消，避免遗留预览或缓时。
+			var shovel_slot = instance_find(obj_shovel_slot, 0);
+	        if (instance_exists(shovel_slot) && shovel_slot.is_selected) {
+	            deselect_shovel();
+	        }
+	        if (global.selected_slot != noone && global.selected_slot != id) {
+	            with (global.selected_slot) {
+				deselect_slot();
+			}
+	        }
+
+	        is_selected = true;
+	        audio_play_sound(snd_card_lift,0,0)
+	        global.selected_slot = id;
+	        battle_begin_tool_hold();
+	}
+
+	function deselect_slot(){
+		is_selected = false;
+		if (selected_preview != noone && instance_exists(selected_preview)) {
+			instance_destroy(selected_preview);
+		}
+		selected_preview = noone;
+		if (global.selected_slot == id) global.selected_slot = noone;
+		battle_end_tool_hold();
+	}
 
 //尝试放置逻辑
 function try_place_once(){
@@ -177,21 +186,9 @@ function try_place_once(){
 			else if global.grid_terrains[logical_row][logical_col].type == "water"{
 				audio_play_sound(snd_enter_water,0,0)
 			}
-            // 取消选择
-            is_selected = false;
-            if (selected_preview != noone && instance_exists(selected_preview)) {
-                instance_destroy(selected_preview);
-            }
-            selected_preview = noone;
-            global.selected_slot = noone;
-        }
-		else if global.quick_placement{
-			// 取消选择
-            is_selected = false;
-            if (selected_preview != noone && instance_exists(selected_preview)) {
-                instance_destroy(selected_preview);
-            }
-            selected_preview = noone;
-            global.selected_slot = noone;
-		}
-}
+	            deselect_slot();
+	        }
+			else if global.quick_placement{
+				deselect_slot();
+			}
+	}
