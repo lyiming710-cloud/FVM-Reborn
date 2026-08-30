@@ -232,15 +232,38 @@ GmlCallable auto RestoreBackupWithTargetFile(const char* saves_dir,
   }
 
   for (const auto& file_entry : backup_json["files"]) {
-    if (!file_entry.contains("name") || !file_entry.contains("content")) {
+    if (!file_entry.contains("name") || !file_entry["name"].is_string() ||
+        !file_entry.contains("content") ||
+        !file_entry["content"].is_string()) {
       return FailWith(NativeError::JsonParseFailed,
                       "RestoreBackupWithTargetFile: invalid file entry");
     }
     std::string name = file_entry["name"];
     std::string content = file_entry["content"];
 
-    fs::path file_path =
-        fs::path(w_saves_dir) / FileSystem::Utf8ToUtf16(name.c_str());
+    fs::path relative_name(FileSystem::Utf8ToUtf16(name.c_str()));
+    if (relative_name.empty() || relative_name.has_root_path() ||
+        relative_name.has_parent_path() ||
+        relative_name.filename() != relative_name ||
+        relative_name == fs::path(L".") || relative_name == fs::path(L"..")) {
+      return FailWith(
+          NativeError::InvalidArgument,
+          "RestoreBackupWithTargetFile: unsafe backup file name");
+    }
+
+    fs::path saves_root = fs::weakly_canonical(fs::path(w_saves_dir), ec);
+    if (ec) {
+      return FailWith(ec.value(),
+                      "RestoreBackupWithTargetFile: canonical root failed");
+    }
+    fs::path file_path = (saves_root / relative_name).lexically_normal();
+    fs::path relative_check = file_path.lexically_relative(saves_root);
+    if (relative_check.empty() || relative_check.has_root_path() ||
+        *relative_check.begin() == fs::path(L"..")) {
+      return FailWith(
+          NativeError::InvalidArgument,
+          "RestoreBackupWithTargetFile: destination escaped save root");
+    }
 
     std::vector<uint8_t> data(content.begin(), content.end());
     std::string file_path_utf8 =

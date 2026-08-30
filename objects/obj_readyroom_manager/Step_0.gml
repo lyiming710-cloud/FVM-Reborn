@@ -23,13 +23,6 @@ if (keyboard_check_pressed(vk_escape)) {
     // the exact same edge and leave a ghost modal behind.
     keyboard_clear(vk_escape);
 
-    if (os_type == os_ios) {
-        // Synchronise only our own edge detector. Do not clear GameMaker's
-        // synthetic mouse state, which can strand iPad touch/trackpad input.
-        for (var _sync_d = 0; _sync_d < 8; _sync_d++) {
-            ios_ready_prev_down[_sync_d] = device_mouse_check_button(_sync_d, mb_left);
-        }
-    }
 }
 
 // Recompute immediately after creation/destruction; never carry a stale lock
@@ -37,30 +30,13 @@ if (keyboard_check_pressed(vk_escape)) {
 is_submenu_open = instance_exists(obj_quit_confirm) || instance_exists(obj_level_preview);
 
 
-// iOS resilient click path. This supplements the legacy Mouse event system
-// with direct device_mouse edges so touch keeps working after ESC modals and
-// Magic Keyboard attach/detach.
-if (os_type == os_ios) {
-    var _standard_pressed = mouse_check_button_pressed(mb_left);
-    var _device_edge = false;
-    var _px = mouse_x;
-    var _py = mouse_y;
-
-    for (var _d = 0; _d < 8; _d++) {
-        var _down = device_mouse_check_button(_d, mb_left);
-        var _edge = device_mouse_check_button_pressed(_d, mb_left) || (_down && !ios_ready_prev_down[_d]);
-        if (_edge) {
-            _device_edge = true;
-            _px = device_mouse_x(_d);
-            _py = device_mouse_y(_d);
-        }
-        ios_ready_prev_down[_d] = _down;
-    }
-
-    // Only take over when device_mouse sees a real edge that the standard
-    // synthetic mouse path missed. Otherwise leave the original Mouse events
-    // fully in control, avoiding duplicate card/button activations.
-    if (_device_edge && !_standard_pressed && !is_submenu_open) {
+// Coordinate-driven fallback for the parts of the ready room that use a
+// Global Mouse event instead of button instances. The persistent pointer
+// controller guarantees this edge is seen only once.
+if (os_type == os_ios && global.pointer_input.device_only &&
+    !global.pointer_input.consumed && !is_submenu_open) {
+        var _px = global.pointer_input.x;
+        var _py = global.pointer_input.y;
         var _handled = false;
 
         // Select a card directly from its screen-space slot.
@@ -125,56 +101,7 @@ if (os_type == os_ios) {
             _handled = true;
         }
 
-        // Legacy object Mouse events did not receive this edge, so reproduce
-        // the small set of ready-room button actions.
-        if (!_handled) {
-            var _hit = instance_position(_px, _py, obj_battlestart_button);
-            if (_hit != noone) {
-                if (deck_slot_count() > 0) {
-                    _hit.button_pushed = true;
-                    audio_play_sound(snd_button, 0, 0);
-                }
-                else {
-                    show_notice("至少需要选择一张防御卡", 60);
-                }
-                _handled = true;
-            }
-
-            if (!_handled) {
-                _hit = instance_position(_px, _py, obj_deck_clear_btn);
-                if (_hit != noone) {
-                    audio_play_sound(snd_button, 0, 0);
-                    clear_deck();
-                    _handled = true;
-                }
-            }
-
-            if (!_handled) {
-                _hit = instance_position(_px, _py, obj_deck_select_btn);
-                if (_hit != noone) {
-                    if (selected_custom_deck != _hit.deck_index) {
-                        selected_custom_deck = _hit.deck_index;
-                        audio_play_sound(snd_button, 0, 0);
-                        load_custom_deck(_hit.deck_index - 1);
-                    }
-                    _handled = true;
-                }
-            }
-
-            if (!_handled) {
-                _hit = instance_position(_px, _py, obj_readyroom_slot_btn);
-                if (_hit != noone) {
-                    if (_hit.type == "prev") {
-                        if (deck_first_slot_index >= 10) deck_first_slot_index -= 10;
-                        else deck_first_slot_index = 10;
-                    }
-                    else {
-                        if (deck_first_slot_index < 10) deck_first_slot_index += 10;
-                        else deck_first_slot_index = 0;
-                    }
-                    audio_play_sound(snd_button, 0, 0);
-                }
-            }
+        if (_handled) {
+            global.pointer_input.consumed = true;
         }
-    }
 }

@@ -8,38 +8,13 @@ on:
 
 permissions:
   contents: write
-  actions: write
 
 concurrency:
   group: fvm-ios-latest
   cancel-in-progress: true
 
 jobs:
-  cleanup:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - name: Remove old IPA releases and artifacts
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName \
-            --jq '.[].tagName' | while IFS= read -r tag; do
-              [ -z "$tag" ] && continue
-              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
-            done
-
-          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/artifacts?per_page=100" \
-            --jq '.artifacts[].id' | while IFS= read -r artifact_id; do
-              [ -z "$artifact_id" ] && continue
-              gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$artifact_id"
-            done
-
   build-ios:
-    needs: cleanup
     runs-on: macos-15-intel
     timeout-minutes: 90
     env:
@@ -131,25 +106,35 @@ jobs:
           xcodebuild "$MODE" "$CONTAINER" -list -json > "$LIST_JSON"
           cat "$LIST_JSON"
 
-          SCHEME="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("workspace") or d.get("project") or {}; s=o.get("schemes") or []; print(s[0] if s else "")' "$LIST_JSON")"
+          TARGET=""
+          if [ -n "$PROJECT" ]; then
+            PROJECT_LIST_JSON="$RUNNER_TEMP/xcode-project-list.json"
+            xcodebuild -project "$PROJECT" -list -json > "$PROJECT_LIST_JSON"
+            TARGET="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("project") or {}; t=o.get("targets") or []; print(next((x for x in t if "test" not in x.lower()), ""))' "$PROJECT_LIST_JSON")"
+          fi
 
-          if [ -n "$SCHEME" ]; then
-            echo "Building scheme: $SCHEME"
-            xcodebuild "$MODE" "$CONTAINER" -scheme "$SCHEME" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
+          if [ -n "$TARGET" ]; then
+            echo "Building application target: $TARGET"
+            xcodebuild -project "$PROJECT" -target "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
           else
-            TARGET="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("project") or d.get("workspace") or {}; t=o.get("targets") or []; print(t[0] if t else "")' "$LIST_JSON")"
-            if [ -z "$TARGET" ]; then
-              echo "::error::No Xcode scheme or target found"
+            SCHEME="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("workspace") or d.get("project") or {}; s=o.get("schemes") or []; print(next((x for x in s if "test" not in x.lower()), ""))' "$LIST_JSON")"
+            if [ -z "$SCHEME" ]; then
+              echo "::error::No application target or scheme found"
               exit 1
             fi
-            echo "Building target: $TARGET"
-            xcodebuild "$MODE" "$CONTAINER" -target "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
+            echo "Building scheme: $SCHEME"
+            xcodebuild "$MODE" "$CONTAINER" -scheme "$SCHEME" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
           fi
 
           APP="$(find "$DERIVED/Build/Products" -type d -path '*Release-iphoneos/*.app' -print -quit || true)"
           if [ -z "$APP" ]; then
             APP="$(find "$DERIVED/Build/Products" -type d -name '*.app' -print -quit || true)"
           fi
+
+          # The unsigned game package must not contain the generated test
+          # bundle or the Windows-only native DLL.
+          find "$APP" -type d -name '*.xctest' -prune -exec rm -rf {} +
+          find "$APP" -type f -iname '*.dll' -delete
           if [ -z "$APP" ]; then
             echo "::error::Xcode build completed but no .app was found"
             find "$DERIVED/Build/Products" -maxdepth 5 -print || true
@@ -170,13 +155,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Replace only this project's rolling IPA after the new package has
+          # built and passed the checks above. Never delete unrelated releases
+          # or failure diagnostics.
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+          elif git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG"
+          fi
+
           gh release create "$RELEASE_TAG" \
             FVM-Reborn-unsigned.ipa \
             FVM-Reborn-unsigned.ipa.sha256 \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "FVM-Reborn current unsigned iOS IPA" \
-            --notes "Current unsigned iOS build from commit $GITHUB_SHA. Previous IPA releases and Actions IPA artifacts are removed before each build."
+            --notes "Current unsigned iOS build from commit $GITHUB_SHA. This rolling release replaces only the previous ios-current IPA after a successful build."
 
       - name: Upload GameMaker build diagnostics on failure
         if: failure() && steps.gm.outputs.out-dir != ''

@@ -54,10 +54,12 @@ Music_Init()
 global.laboratory_manager = new LaboratoryManager()
 global.laboratory_manager.init()
 global.gui_stack = new GuiStack()
-global.native_util = new NativeUtil()
-
-init_native_log()
-move_files()
+global.native_util = undefined
+if (os_type == os_windows) {
+	global.native_util = new NativeUtil()
+	init_native_log()
+	move_files()
+}
 
 // 初始化全局键位映射
 global.keybind_map = ds_map_create();
@@ -104,8 +106,7 @@ if (!file_exists("config.ini")) {
 	ini_write_bool("settings", "borderless_window", true);
 	ini_write_real("settings", "save_slot", 0)
 	ini_write_bool("settings", "lose_focus_pause", true)
-	ini_open("config.ini");
-    for (var i = 0; i < array_length(global.keybind_config); i++) {
+	    for (var i = 0; i < array_length(global.keybind_config); i++) {
         var kb = global.keybind_config[i];
         ini_write_real("keybinds", kb.name, kb.default1);
     }

@@ -38,6 +38,7 @@ map_spr_index = 0
 
 speed_up = false
 slow_time = false
+card_hold_active = false
 virtual_speed_pressed = false
 virtual_slow_pressed = false
 time_limit = -1

@@ -1,0 +1,58 @@
+// Begin Step: sample every pointer source once before gameplay/UI Step events.
+var _native_pressed = mouse_check_button_pressed(mb_left);
+var _native_released = mouse_check_button_released(mb_left);
+var _pressed_device = -1;
+var _down_device = -1;
+var _released_device = -1;
+
+for (var _d = 0; _d < 8; _d++) {
+    var _down = device_mouse_check_button(_d, mb_left);
+    var _edge = device_mouse_check_button_pressed(_d, mb_left) ||
+        (_down && !ios_prev_down[_d]);
+    var _release_edge = device_mouse_check_button_released(_d, mb_left) ||
+        (!_down && ios_prev_down[_d]);
+
+    if (_pressed_device == -1 && _edge) _pressed_device = _d;
+    if (_down_device == -1 && _down) _down_device = _d;
+    if (_released_device == -1 && _release_edge) _released_device = _d;
+    ios_prev_down[_d] = _down;
+}
+
+var _focus_now = window_has_focus();
+var _focus_changed = (_focus_now != ios_last_focus);
+ios_last_focus = _focus_now;
+
+var _px = mouse_x;
+var _py = mouse_y;
+var _gw = display_get_gui_width();
+var _gh = display_get_gui_height();
+var _gui_x = _px * _gw / room_width;
+var _gui_y = _py * _gh / room_height;
+var _coordinate_device = (_pressed_device != -1) ? _pressed_device : _down_device;
+
+if (_coordinate_device != -1) {
+    _px = device_mouse_x(_coordinate_device);
+    _py = device_mouse_y(_coordinate_device);
+    _gui_x = device_mouse_x_to_gui(_coordinate_device);
+    _gui_y = device_mouse_y_to_gui(_coordinate_device);
+}
+else if (_released_device != -1) {
+    _px = device_mouse_x(_released_device);
+    _py = device_mouse_y(_released_device);
+    _gui_x = device_mouse_x_to_gui(_released_device);
+    _gui_y = device_mouse_y_to_gui(_released_device);
+}
+
+global.pointer_input.pressed = !_focus_changed &&
+    (_native_pressed || _pressed_device != -1);
+global.pointer_input.released = !_focus_changed &&
+    (_native_released || _released_device != -1);
+global.pointer_input.native_pressed = !_focus_changed && _native_pressed;
+global.pointer_input.device_only = !_focus_changed &&
+    (_pressed_device != -1) && !_native_pressed;
+global.pointer_input.consumed = false;
+global.pointer_input.device = _coordinate_device;
+global.pointer_input.x = _px;
+global.pointer_input.y = _py;
+global.pointer_input.gui_x = _gui_x;
+global.pointer_input.gui_y = _gui_y;
