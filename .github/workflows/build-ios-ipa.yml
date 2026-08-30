@@ -115,7 +115,7 @@ jobs:
 
           if [ -n "$TARGET" ]; then
             echo "Building application target: $TARGET"
-            xcodebuild -project "$PROJECT" -target "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
+            xcodebuild -project "$PROJECT" -target "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' SYMROOT="$DERIVED/Build/Products" OBJROOT="$DERIVED/Build/Intermediates.noindex" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" DEVELOPMENT_TEAM="" build
           else
             SCHEME="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("workspace") or d.get("project") or {}; s=o.get("schemes") or []; print(next((x for x in s if "test" not in x.lower()), ""))' "$LIST_JSON")"
             if [ -z "$SCHEME" ]; then
