@@ -31,3 +31,6 @@ first_target_y = 0
 
 origin_row = -1
 origin_col = -1
+
+// 下砸伤害和音效只能结算一次；结算后保留压扁模型等待清理 Alarm。
+impact_resolved = false

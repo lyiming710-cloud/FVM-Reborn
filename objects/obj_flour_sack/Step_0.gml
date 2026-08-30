@@ -11,6 +11,14 @@ if origin_row == -1{
 	origin_col = grid_col
 }
 
+// 命中后只保留压扁动画，等待 alarm[1] 清理。尤其在水面上，
+// 不再重新索敌或再次进入下砸流程。
+if impact_resolved{
+	chspeed = 0
+	cvspeed = 0
+	exit
+}
+
 //检测自身右方是否有敌人
 var has_enemy = false
 with(obj_enemy_parent){
@@ -65,5 +73,4 @@ else{
 
 	x += chspeed
 	y += cvspeed
-
 
