@@ -1,65 +1,53 @@
 // iPad-only battle touch controls (Draw GUI).
 if (os_type == os_ios && instance_exists(obj_battle)) {
-    var _gw = display_get_gui_width();
     var _gh = display_get_gui_height();
 
-    var _top_x1 = 24;
-    var _top_y1 = 24;
-    var _top_x2 = 184;
-    var _top_y2 = 94;
+    var _x1 = 24;
+    var _x2 = 184;
 
-    var _bottom_y1 = _gh - 98;
-    var _bottom_y2 = _gh - 28;
-    var _speed_x1 = 24;
-    var _speed_x2 = 184;
-    var _esc_x1 = 198;
-    var _esc_x2 = 358;
-    var _slow_x1 = 372;
-    var _slow_x2 = 532;
+    // Bottom -> top: ESC, speed, card-selection slow-time switch.
+    var _esc_y1 = _gh - 98;
+    var _esc_y2 = _gh - 28;
+    var _speed_y1 = _gh - 182;
+    var _speed_y2 = _gh - 112;
+    var _slow_y1 = _gh - 266;
+    var _slow_y2 = _gh - 196;
 
     draw_set_font(font_yuan);
     draw_set_halign(fa_center);
     draw_set_valign(fa_middle);
 
-    // Pause
-    draw_set_alpha((global.is_paused && !global.show_menu) ? 0.82 : 0.58);
-    draw_set_color(c_black);
-    draw_roundrect(_top_x1, _top_y1, _top_x2, _top_y2, false);
-    draw_set_alpha(1);
-    draw_set_color(c_white);
-    draw_roundrect(_top_x1, _top_y1, _top_x2, _top_y2, true);
-    draw_text((_top_x1 + _top_x2) * 0.5, (_top_y1 + _top_y2) * 0.5,
-        (global.is_paused && !global.show_menu) ? "继续" : "暂停");
-
-    // Speed 1x/2x
-    var _speed_active = obj_battle.speed_up && !obj_battle.slow_time;
-    draw_set_alpha(_speed_active ? 0.82 : 0.58);
-    draw_set_color(c_black);
-    draw_roundrect(_speed_x1, _bottom_y1, _speed_x2, _bottom_y2, false);
-    draw_set_alpha(1);
-    draw_set_color(c_white);
-    draw_roundrect(_speed_x1, _bottom_y1, _speed_x2, _bottom_y2, true);
-    draw_text((_speed_x1 + _speed_x2) * 0.5, (_bottom_y1 + _bottom_y2) * 0.5,
-        obj_battle.speed_up ? "倍速 2×" : "倍速 1×");
-
-    // ESC / pause menu
+    // ESC is the only persistent HUD button. It can open/close the pause menu.
     draw_set_alpha(global.show_menu ? 0.82 : 0.58);
     draw_set_color(c_black);
-    draw_roundrect(_esc_x1, _bottom_y1, _esc_x2, _bottom_y2, false);
+    draw_roundrect(_x1, _esc_y1, _x2, _esc_y2, false);
     draw_set_alpha(1);
     draw_set_color(c_white);
-    draw_roundrect(_esc_x1, _bottom_y1, _esc_x2, _bottom_y2, true);
-    draw_text((_esc_x1 + _esc_x2) * 0.5, (_bottom_y1 + _bottom_y2) * 0.5, "ESC");
+    draw_roundrect(_x1, _esc_y1, _x2, _esc_y2, true);
+    draw_text((_x1 + _x2) * 0.5, (_esc_y1 + _esc_y2) * 0.5, "ESC");
 
-    // 0.5x slow time
-    draw_set_alpha(obj_battle.slow_time ? 0.82 : 0.58);
-    draw_set_color(c_black);
-    draw_roundrect(_slow_x1, _bottom_y1, _slow_x2, _bottom_y2, false);
-    draw_set_alpha(1);
-    draw_set_color(c_white);
-    draw_roundrect(_slow_x1, _bottom_y1, _slow_x2, _bottom_y2, true);
-    draw_text((_slow_x1 + _slow_x2) * 0.5, (_bottom_y1 + _bottom_y2) * 0.5,
-        obj_battle.slow_time ? "缓时 0.5×" : "缓时");
+    // Speed and card-slow controls are only relevant while battle is running.
+    if (!global.is_paused && !global.show_menu) {
+        // Speed 1x/2x. Use ASCII "x": the font does not reliably contain ×.
+        draw_set_alpha(obj_battle.speed_up ? 0.82 : 0.58);
+        draw_set_color(c_black);
+        draw_roundrect(_x1, _speed_y1, _x2, _speed_y2, false);
+        draw_set_alpha(1);
+        draw_set_color(c_white);
+        draw_roundrect(_x1, _speed_y1, _x2, _speed_y2, true);
+        draw_text((_x1 + _x2) * 0.5, (_speed_y1 + _speed_y2) * 0.5,
+            obj_battle.speed_up ? "倍速 2x" : "倍速 1x");
+
+        // "缓时" is now a switch for automatic 0.1x while a plant card is held.
+        draw_set_alpha(obj_battle.card_slow_enabled ? 0.82 : 0.58);
+        draw_set_color(c_black);
+        draw_roundrect(_x1, _slow_y1, _x2, _slow_y2, false);
+        draw_set_alpha(1);
+        draw_set_color(c_white);
+        draw_roundrect(_x1, _slow_y1, _x2, _slow_y2, true);
+        draw_text((_x1 + _x2) * 0.5, (_slow_y1 + _slow_y2) * 0.5,
+            obj_battle.card_slow_enabled ? "缓时 开" : "缓时 关");
+    }
 
     draw_set_alpha(1);
     draw_set_color(c_white);
