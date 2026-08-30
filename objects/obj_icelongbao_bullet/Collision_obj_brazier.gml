@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if ds_list_find_index(brazier_list,other.id) == -1 && burnt < 2 && row == other.grid_row{
 	burnt += 1
 	if burnt == 2{

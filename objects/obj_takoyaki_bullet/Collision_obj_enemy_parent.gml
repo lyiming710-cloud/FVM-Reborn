@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 
 
 	if other.hp > 0 and target_enemy == other.id  and can_hit(target_type,other.target_type){

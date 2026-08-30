@@ -1,5 +1,9 @@
 // Inherit the parent event
 
+if (global.is_paused) {
+	exit;
+}
+
 event_inherited();
 
 if state == ENEMY_STATE.ATTACK{

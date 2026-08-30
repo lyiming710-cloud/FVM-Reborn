@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if target_type == "normal"{
 	if burnt == 0{
 		instance_create_depth(x,y,depth,obj_icelongbao_bullet_effect)

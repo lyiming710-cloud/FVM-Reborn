@@ -1,5 +1,9 @@
 // Inherit the parent event
 
+if (global.is_paused) {
+	exit;
+}
+
 if hp > maxhp - helmet_hp{
 	sprite_index = spr_roller_skating_mouse_helmet
 	hit_sound = snd_hit3

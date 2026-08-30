@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if !bounced{
 	move_speed *= -1
 	y_move_speed *= -1
