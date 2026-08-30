@@ -109,17 +109,8 @@ if time_limit > 0{
 }
 
 
-if keyboard_check_pressed(vk_shift) || keyboard_check_pressed(vk_lshift) || virtual_speed_pressed{
-    virtual_speed_pressed = false
+if keyboard_check_pressed(vk_shift) || keyboard_check_pressed(vk_lshift){
     speed_up = not speed_up
-    battle_apply_speed();
-}
-
-// iPad touch HUD toggle: controls only whether selecting a plant card
-// temporarily changes the simulation to 0.1x. It is not a standalone 0.5x mode.
-if virtual_slow_pressed{
-    virtual_slow_pressed = false
-    card_slow_enabled = not card_slow_enabled
     battle_apply_speed();
 }
 
