@@ -1,3 +1,9 @@
+// Release a synthetic ESC from the previous frame before sampling new input.
+if (ios_virtual_esc_held) {
+    keyboard_key_release(vk_escape);
+    ios_virtual_esc_held = false;
+}
+
 // Begin Step: sample every pointer source once before gameplay/UI Step events.
 var _native_pressed = mouse_check_button_pressed(mb_left);
 var _native_released = mouse_check_button_released(mb_left);
@@ -56,3 +62,22 @@ global.pointer_input.x = _px;
 global.pointer_input.y = _py;
 global.pointer_input.gui_x = _gui_x;
 global.pointer_input.gui_y = _gui_y;
+
+
+// Persistent iOS ESC button. Outside battle this is the only touch HUD key.
+// In battle, obj_battle_pause_manager draws and handles the same bottom slot
+// together with pause/speed/slow controls.
+if (os_type == os_ios && !instance_exists(obj_battle) &&
+    global.pointer_input.pressed && !global.pointer_input.consumed) {
+    var _esc_x1 = 24;
+    var _esc_x2 = 184;
+    var _esc_y1 = _gh - 98;
+    var _esc_y2 = _gh - 28;
+
+    if (_gui_x >= _esc_x1 && _gui_x <= _esc_x2 &&
+        _gui_y >= _esc_y1 && _gui_y <= _esc_y2) {
+        global.pointer_input.consumed = true;
+        keyboard_key_press(vk_escape);
+        ios_virtual_esc_held = true;
+    }
+}
