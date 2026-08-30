@@ -1,7 +1,7 @@
 // iPad battle HUD consumes the same per-frame pointer edge as cards/shovel.
-// Buttons are stacked vertically at the bottom-left: ESC, speed, card-slow.
-// ESC remains available while paused/menu-open; the other two are battle-only.
-if (os_type == os_ios) {
+// Battle layout is a single bottom-left vertical stack:
+// ESC (bottom) -> Pause -> Speed -> Slow-time switch (top).
+if (os_type == os_ios && instance_exists(obj_battle)) {
     var _gh = display_get_gui_height();
     var _hud_pressed = global.pointer_input.pressed && !global.pointer_input.consumed;
     var _px = global.pointer_input.gui_x;
@@ -13,26 +13,40 @@ if (os_type == os_ios) {
 
         var _esc_y1 = _gh - 98;
         var _esc_y2 = _gh - 28;
-        var _speed_y1 = _gh - 182;
-        var _speed_y2 = _gh - 112;
-        var _slow_y1 = _gh - 266;
-        var _slow_y2 = _gh - 196;
-
-        var _battle_controls_visible = !global.is_paused && !global.show_menu;
+        var _pause_y1 = _gh - 182;
+        var _pause_y2 = _gh - 112;
+        var _speed_y1 = _gh - 266;
+        var _speed_y2 = _gh - 196;
+        var _slow_y1 = _gh - 350;
+        var _slow_y2 = _gh - 280;
 
         if (_px >= _x1 && _px <= _x2 && _py >= _esc_y1 && _py <= _esc_y2) {
             virtual_esc_pressed = true;
             global.pointer_input.consumed = true;
         }
-        else if (_battle_controls_visible && _px >= _x1 && _px <= _x2) {
-            if (_py >= _speed_y1 && _py <= _speed_y2) {
-                with (obj_battle) virtual_speed_pressed = true;
-                global.pointer_input.consumed = true;
+        else if (!global.show_menu &&
+                 _px >= _x1 && _px <= _x2 &&
+                 _py >= _pause_y1 && _py <= _pause_y2) {
+            virtual_pause_pressed = true;
+            global.pointer_input.consumed = true;
+        }
+        else if (!global.show_menu &&
+                 _px >= _x1 && _px <= _x2 &&
+                 _py >= _speed_y1 && _py <= _speed_y2) {
+            with (obj_battle) {
+                speed_up = !speed_up;
+                battle_apply_speed();
             }
-            else if (_py >= _slow_y1 && _py <= _slow_y2) {
-                with (obj_battle) virtual_slow_pressed = true;
-                global.pointer_input.consumed = true;
+            global.pointer_input.consumed = true;
+        }
+        else if (!global.show_menu &&
+                 _px >= _x1 && _px <= _x2 &&
+                 _py >= _slow_y1 && _py <= _slow_y2) {
+            with (obj_battle) {
+                card_slow_enabled = !card_slow_enabled;
+                battle_apply_speed();
             }
+            global.pointer_input.consumed = true;
         }
     }
 }
