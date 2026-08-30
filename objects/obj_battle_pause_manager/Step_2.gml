@@ -1,6 +1,9 @@
 // iPad battle HUD consumes the same per-frame pointer edge as cards/shovel.
 // Bottom-left vertical stack: ESC (bottom), pause, speed, card-slow switch (top).
 // ESC persists outside battle. Pause/speed/slow are battle-only.
+var _synthetic_pause = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
+var _battle_paused = global.is_paused && !_synthetic_pause;
+
 if (os_type == os_ios && instance_exists(obj_battle)) {
     var _gh = display_get_gui_height();
     var _hud_pressed = global.pointer_input.pressed && !global.pointer_input.consumed;
@@ -30,7 +33,7 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
             virtual_pause_pressed = true;
             global.pointer_input.consumed = true;
         }
-        else if (!global.is_paused && !global.show_menu &&
+        else if (!_battle_paused && !global.show_menu &&
                  _px >= _x1 && _px <= _x2 &&
                  _py >= _speed_y1 && _py <= _speed_y2) {
             with (obj_battle) {
@@ -39,7 +42,7 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
             }
             global.pointer_input.consumed = true;
         }
-        else if (!global.is_paused && !global.show_menu &&
+        else if (!_battle_paused && !global.show_menu &&
                  _px >= _x1 && _px <= _x2 &&
                  _py >= _slow_y1 && _py <= _slow_y2) {
             with (obj_battle) {
@@ -55,13 +58,14 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
 if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
     virtual_pause_pressed = false;
     //if global.selected_slot == noone {
-        if (!global.is_paused) {
+        if (!_battle_paused) {
             battle_cancel_selected_tool();
             // 空格暂停：只暂停不显示菜单
             global.is_paused = true;
+            if (_synthetic_pause) global.battle_keep_paused_after_skip = true;
             global.show_menu = false;
         }
-        else if (global.is_paused && !global.show_menu) {
+        else if (_battle_paused && !global.show_menu) {
             // 取消暂停
 			if global.game_over{
 				if settlement || obj_game_over.sprite_index == spr_lose || global.level_file.version == "1.0.0"{
@@ -161,8 +165,9 @@ if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
 				
 			}
 			if obj_battle.battle_time != 0 && !global.game_over{
-				global.is_paused = false;
-			}
+                global.is_paused = false;
+                global.battle_keep_paused_after_skip = false;
+            }
         }
     //}
 }
@@ -177,15 +182,16 @@ if (_esc_key_pressed || virtual_esc_pressed) {
     // ESC always puts a held card/shovel back before opening the menu.
     battle_cancel_selected_tool();
 
-    if (!global.is_paused) {
+    if (!_battle_paused) {
         global.is_paused = true;
+        if (_synthetic_pause) global.battle_keep_paused_after_skip = true;
         global.show_menu = true;
         if (!instance_exists(obj_pause_menu)) {
             instance_create_depth(room_width / 2, room_height / 2, depth, obj_pause_menu);
         }
         _esc_handled = true;
     }
-    else if (global.is_paused && !global.show_menu) {
+    else if (_battle_paused && !global.show_menu) {
         // Space-pause -> ESC opens the full pause menu.
         global.show_menu = true;
         if (!instance_exists(obj_pause_menu)) {
@@ -193,7 +199,7 @@ if (_esc_key_pressed || virtual_esc_pressed) {
         }
         _esc_handled = true;
     }
-    else if (global.is_paused && global.show_menu) {
+    else if (_battle_paused && global.show_menu) {
         // Close only the top-most modal first.
         if (instance_exists(obj_config_menu)) {
             instance_destroy(obj_config_menu);
@@ -214,6 +220,7 @@ if (_esc_key_pressed || virtual_esc_pressed) {
             }
             // Also recover from a stale show_menu flag with no menu instance.
             global.is_paused = false;
+            global.battle_keep_paused_after_skip = false;
             global.show_menu = false;
             _esc_handled = true;
         }

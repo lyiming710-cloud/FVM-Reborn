@@ -1,3 +1,11 @@
+// Recover if the previous frame ended before Pre Draw cleared a synthetic pause.
+if (global.battle_skip_frame) {
+    global.is_paused = global.battle_keep_paused_after_skip;
+    global.battle_skip_frame = false;
+    global.battle_keep_paused_after_skip = false;
+}
+global.battle_simulation_tick = true;
+
 // Release a synthetic ESC from the previous frame before sampling new input.
 if (ios_virtual_esc_held) {
     keyboard_key_release(vk_escape);
@@ -80,4 +88,31 @@ if (os_type == os_ios && !instance_exists(obj_battle) &&
         keyboard_key_press(vk_escape);
         ios_virtual_esc_held = true;
     }
+}
+
+
+// Schedule gameplay independently from the 120 FPS input/render loop.
+if (instance_exists(obj_battle)) {
+    var _battle_clock = instance_find(obj_battle, 0);
+    if (!global.is_paused) {
+        var _logic_hz = _battle_clock.speed_up ? 120 : 60;
+        if (_battle_clock.card_hold_active && _battle_clock.card_slow_enabled) _logic_hz = 6;
+
+        _battle_clock.simulation_accumulator += _logic_hz;
+        if (_battle_clock.simulation_accumulator >= 120) {
+            _battle_clock.simulation_accumulator -= 120;
+            global.battle_simulation_tick = true;
+        }
+        else {
+            global.battle_simulation_tick = false;
+            global.battle_skip_frame = true;
+            global.battle_keep_paused_after_skip = false;
+            global.is_paused = true;
+        }
+    }
+}
+else {
+    global.battle_simulation_tick = true;
+    global.battle_skip_frame = false;
+    global.battle_keep_paused_after_skip = false;
 }

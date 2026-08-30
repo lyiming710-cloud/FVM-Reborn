@@ -1,5 +1,6 @@
 // 控制悬停提示透明度
-if global.is_paused{
+var _simulation_skip = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
+if (global.is_paused && !_simulation_skip) {
 	exit
 }
 var slot_key = global.keybind_map[? "铲子"];

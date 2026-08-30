@@ -7,6 +7,12 @@ ios_prev_down = array_create(8, false);
 ios_last_focus = window_has_focus();
 ios_virtual_esc_held = false;
 
+// Battle clock state. Synthetic skip frames reuse the game's normal pause
+// checks while leaving every instance active for placement/collision queries.
+global.battle_skip_frame = false;
+global.battle_simulation_tick = true;
+global.battle_keep_paused_after_skip = false;
+
 global.pointer_input = {
     pressed: false,
     released: false,

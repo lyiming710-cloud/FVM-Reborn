@@ -1,12 +1,23 @@
-if global.is_paused{
+var _simulation_skip = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
+if (global.is_paused && !_simulation_skip) {
 	exit
 }
 
 if global.lose_focus_pause{
-	if !window_has_focus() && !global.is_paused{
+	if !window_has_focus(){
 		global.is_paused = true
+        if (_simulation_skip) global.battle_keep_paused_after_skip = true;
+        exit
 	}
 }
+
+// Keep keyboard speed changes responsive on every 120 FPS input frame.
+if keyboard_check_pressed(vk_shift) || keyboard_check_pressed(vk_lshift){
+    speed_up = not speed_up
+    battle_apply_speed();
+}
+
+if (_simulation_skip) exit;
 
 battle_time ++
 // obj_controller STEP 事件
@@ -108,11 +119,6 @@ if time_limit > 0{
 	}
 }
 
-
-if keyboard_check_pressed(vk_shift) || keyboard_check_pressed(vk_lshift){
-    speed_up = not speed_up
-    battle_apply_speed();
-}
 
 if battle_time >= (global.level_file.first_wave_delay * 60) && level_stage == "ready" {
     

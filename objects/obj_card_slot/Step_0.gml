@@ -1,5 +1,6 @@
 //step事件
-if global.is_paused{
+var _simulation_skip = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
+if (global.is_paused && !_simulation_skip) {
 	exit
 }
 
@@ -20,28 +21,32 @@ if card_id != "magic_chicken"{
 		}
 	}
 }
-if global.debug{
-	cooldown_timer = cooldown
-}
-if cooldown_timer < cooldown{
-	cooldown_timer ++
-
-
-    // 冷却中状态
-    is_ready = false;
-    cooling_alpha = min(cooling_alpha + 0.05, 0.7); // 淡入冷却效果
-} else {
-    // 冷却完成状态
-    cooling_alpha = max(cooling_alpha - 0.05, 0); // 淡出冷却效果
-    
-    // 检查阳光是否足够
-    if (global.flame >= current_cost) {
-        is_ready = true;
-    } else {
-        is_ready = false;
+// Cooldown/resource readiness follows simulation ticks, not physical FPS.
+if (!_simulation_skip) {
+    if global.debug{
+    	cooldown_timer = cooldown
     }
+    if cooldown_timer < cooldown{
+    	cooldown_timer ++
+    
+    
+        // 冷却中状态
+        is_ready = false;
+        cooling_alpha = min(cooling_alpha + 0.05, 0.7); // 淡入冷却效果
+    } else {
+        // 冷却完成状态
+        cooling_alpha = max(cooling_alpha - 0.05, 0); // 淡出冷却效果
+        
+        // 检查阳光是否足够
+        if (global.flame >= current_cost) {
+            is_ready = true;
+        } else {
+            is_ready = false;
+        }
+    }
+    
+    
 }
-
 // 检测鼠标悬停（用于显示提示）
 var mx = _input_x;
 var my = _input_y;
