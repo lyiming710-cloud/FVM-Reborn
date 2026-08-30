@@ -110,6 +110,16 @@ if (instance_exists(obj_battle)) {
             global.is_paused = true;
         }
     }
+
+    // Alarms are decremented by GameMaker after Begin Step but before Step.
+    // Hold battle alarms steady on real or synthetic pause frames by adding
+    // back one tick now, before the engine performs that decrement.
+    if (global.is_paused) {
+        with (obj_flour_sack) {
+            if (alarm[0] >= 0) alarm[0] += 1;
+            if (alarm[1] >= 0) alarm[1] += 1;
+        }
+    }
 }
 else {
     global.battle_simulation_tick = true;
