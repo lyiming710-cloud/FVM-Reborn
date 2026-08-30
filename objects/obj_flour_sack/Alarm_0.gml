@@ -36,10 +36,12 @@ with (obj_enemy_parent) {
 // 播放倭瓜攻击效果
 //effect_create_above(ef_explosion, x, y, 2, c_white);
 
-// 播放攻击声音
+// 下砸只结算和播放一次。此前这里还会等待 alarm[1] 约 41 tick，
+// 水面目标可能在这段滞留期内让攻击状态重复触发，造成连续下砸音效。
 audio_play_sound(snd_flour_sack, 0, false);
 
-// 摧毁自己
-alarm[1] = 41
 chspeed = 0
 cvspeed = 0
+grid_row = origin_row
+grid_col = origin_col
+instance_destroy()
