@@ -5,6 +5,7 @@ depth = -9900
 // paths. Never clear GameMaker's synthetic mouse state here.
 ios_prev_down = array_create(8, false);
 ios_last_focus = window_has_focus();
+ios_virtual_esc_held = false;
 
 global.pointer_input = {
     pressed: false,
