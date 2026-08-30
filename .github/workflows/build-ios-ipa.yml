@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - ".github/workflows/build-ios-ipa.yml"
+      - "**/*.gml"
+      - "**/*.yy"
 
 permissions:
   contents: write
