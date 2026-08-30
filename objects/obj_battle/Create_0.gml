@@ -37,7 +37,8 @@ boss_count = 0
 map_spr_index = 0
 
 speed_up = false
-slow_time = false
+// Whether selecting a plant card temporarily slows battle simulation to 0.1x.
+card_slow_enabled = true
 card_hold_active = false
 virtual_speed_pressed = false
 virtual_slow_pressed = false
