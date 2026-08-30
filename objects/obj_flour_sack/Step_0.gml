@@ -1,7 +1,5 @@
 // Inherit the parent event
 if global.is_paused{
-	alarm[0] = alarm_get(0) + 1
-	alarm[1] = alarm_get(1) + 1
 	exit
 }
 ice_timer = 0
