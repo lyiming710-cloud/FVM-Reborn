@@ -40,8 +40,6 @@ speed_up = false
 // Whether selecting a plant card temporarily slows battle simulation to 0.1x.
 card_slow_enabled = true
 card_hold_active = false
-virtual_speed_pressed = false
-virtual_slow_pressed = false
 time_limit = -1
 timer_pause = false
 
