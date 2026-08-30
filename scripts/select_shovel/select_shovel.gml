@@ -8,7 +8,6 @@ function select_shovel() {
     }
 
     is_selected = true;
-    // 设置全局选中为铲子
+    // 设置全局选中为铲子。缓时开关只作用于植物卡片，不作用于铲子。
     global.selected_slot = noone;
-    battle_begin_tool_hold();
 }
