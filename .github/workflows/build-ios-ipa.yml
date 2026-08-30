@@ -5,6 +5,19 @@ on:
   push:
     paths:
       - ".github/workflows/build-ios-ipa.yml"
+      - "FVM-reborn.yyp"
+      - "objects/**"
+      - "scripts/**"
+      - "rooms/**"
+      - "options/ios/**"
+      - "sprites/**"
+      - "fonts/**"
+      - "sounds/**"
+      - "shaders/**"
+      - "tilesets/**"
+      - "sequences/**"
+      - "extensions/**"
+      - "datafiles/**"
       - "**/*.gml"
       - "**/*.yy"
 
