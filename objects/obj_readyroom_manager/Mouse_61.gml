@@ -1,6 +1,5 @@
-if y_offset <= 96*slot_rows - 40 - 515{
-	y_offset += 40
-}
-else{
-	y_offset = 96*slot_rows - 515
+if !is_submenu_open{
+	readyroom_refresh_card_scroll_metrics()
+	y_offset = min(card_scroll_max,y_offset + 40)
+	readyroom_refresh_card_scroll_metrics()
 }

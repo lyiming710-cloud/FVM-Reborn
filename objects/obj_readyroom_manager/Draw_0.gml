@@ -3,14 +3,16 @@ draw_set_halign(fa_center)
 draw_set_valign(fa_middle)
 draw_set_font(font_yuan)
 draw_text(190,45,global.map_name)
-draw_set_color(c_black)
-draw_text(565,53,global.level_data.name)
-{//绘制可选择的防御卡
-	surface_set_target(slot_surface)
-for(var i = 0 ; i < slot_rows ; i++){
-        for(var j = 0 ; j < slot_cols ; j++){
-            draw_sprite_ext(spr_package_slot_bg,0,x+42+i*84,y + 48 + 96 * j- y_offset,1.8,1.8,0,c_white,1)
-        }
+	draw_set_color(c_black)
+	draw_text(565,53,global.level_data.name)
+	readyroom_refresh_card_scroll_metrics()
+	{//绘制可选择的防御卡
+		surface_set_target(slot_surface)
+		draw_clear_alpha(c_black,0)
+	for(var i = 0 ; i < slot_rows ; i++){
+	        for(var j = 0 ; j < card_scroll_row_count ; j++){
+	            draw_sprite_ext(spr_package_slot_bg,0,x+42+i*84,y + 48 + 96 * j- y_offset,1.8,1.8,0,c_white,1)
+	        }
     }
     
     // 绘制所有已注册的植物卡片
@@ -29,7 +31,7 @@ for(var i = 0 ; i < slot_rows ; i++){
         var row = card_index div slot_rows;
         var col = card_index mod slot_rows;
         
-        if (row < slot_rows) {
+	        if (row < card_scroll_row_count) {
             var card_x = x + 42 + col * 84
             var card_y = y + 48 + row * 96 - y_offset;
             
@@ -85,9 +87,10 @@ for(var i = 0 ; i < slot_rows ; i++){
                 if (point_in_rectangle(mouse_x, mouse_y, 
                                       hover_x - spr_width/2, hover_y - spr_height/2,
                                       hover_x + spr_width/2, hover_y + spr_height/2)) 
-				&& mouse_y > y+315 && mouse_y < y+755{
-                    hover_card_index = card_index;
-                }
+					&& mouse_y > card_scroll_view_top && mouse_y < card_scroll_view_bottom
+					&& !card_scroll_dragging && !card_scrollbar_dragging{
+	                    hover_card_index = card_index;
+	                }
             } else if (is_selected){
                 // 未解锁的卡片使用灰色滤镜
 				draw_set_color(c_black);
@@ -116,9 +119,24 @@ for(var i = 0 ; i < slot_rows ; i++){
         }
     }
 	surface_reset_target()
-}
-draw_surface(slot_surface,x-25+803-42,y+ 375-48)
-{// 绘制悬停提示
+	}
+	draw_surface(slot_surface,x-25+803-42,y+ 375-48)
+	if card_scroll_max > 0{
+		draw_set_halign(fa_center)
+		draw_set_valign(fa_middle)
+		draw_set_color(c_black)
+		draw_set_alpha(0.45)
+		draw_roundrect(card_scrollbar_x,card_scroll_view_top,
+			card_scrollbar_x + card_scrollbar_width,card_scroll_view_bottom,false)
+
+		draw_set_color(card_scrollbar_dragging ? c_yellow : c_white)
+		draw_set_alpha(card_scrollbar_dragging ? 1 : 0.88)
+		draw_roundrect(card_scrollbar_x,card_scrollbar_thumb_y,
+			card_scrollbar_x + card_scrollbar_width,
+			card_scrollbar_thumb_y + card_scrollbar_thumb_h,false)
+		draw_set_alpha(1)
+	}
+	{// 绘制悬停提示
     if (hover_card_index != -1 && !is_submenu_open) {
 		var card_id = global.player_deck[| hover_card_index*2];
         var deck_entry = global.player_deck[| hover_card_index*2+1];

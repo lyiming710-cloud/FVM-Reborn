@@ -1,13 +1,5 @@
-// Standard mouse path remains primary on every platform.
-// Step_0.gml only supplies an iOS device_mouse fallback when this path misses an edge.
-
-if hover_card_index != -1 && !is_submenu_open{
-	if deck_slot_first_empty() != -1{
-		audio_play_sound(snd_button,0,0)
-		var card_id = global.player_deck[| hover_card_index*2];
-		add_to_deck(card_id,get_card_info_simple(card_id).shape)
-	}
-}
+// Card-library taps are resolved on release in Step_0.gml so the same press
+// can turn into a touch drag without accidentally selecting a card.
 if hover_slot_index != -1 && !is_submenu_open{
 	if !deck_slot_is_empty(hover_slot_index){
 		audio_play_sound(snd_button,0,0)
