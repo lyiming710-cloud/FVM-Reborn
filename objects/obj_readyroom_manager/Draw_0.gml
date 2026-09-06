@@ -11,7 +11,7 @@ draw_text(190,45,global.map_name)
 		draw_clear_alpha(c_black,0)
 	for(var i = 0 ; i < slot_rows ; i++){
 	        for(var j = 0 ; j < card_scroll_row_count ; j++){
-	            draw_sprite_ext(spr_package_slot_bg,0,x+42+i*84,y + 48 + 96 * j- y_offset,1.8,1.8,0,c_white,1)
+	            draw_sprite_ext(spr_package_slot_bg,0,x+42+i*84,y + 48 + 96 * j- y_offset,0.9,0.9,0,c_white,1)
 	        }
     }
     
@@ -75,7 +75,7 @@ draw_text(190,45,global.map_name)
 				}
 				var level = global.save_data.unlocked_cards[info_index].level
 				if level > 0{
-					draw_sprite_ext(spr_star_slot, level - 1, card_x-25, card_y-35,1.4,1.4,0,c_white,1);
+					draw_sprite_ext(spr_star_slot,  level - 1,  card_x-25,  card_y-35, 0.7, 0.7, 0, c_white, 1);
 				}
                 // 检查鼠标是否悬停在卡片上
                 var spr_width = 84;
@@ -110,7 +110,7 @@ draw_text(190,45,global.map_name)
 				}
 				var level = global.save_data.unlocked_cards[info_index].level
 				if level > 0{
-					draw_sprite_ext(spr_star_slot, level - 1, card_x-25, card_y-35,1.4,1.4,0,c_gray,1);
+					draw_sprite_ext(spr_star_slot,  level - 1,  card_x-25,  card_y-35, 0.7, 0.7, 0, c_gray, 1);
 				}
 				draw_text(card_x,card_y+37,card_data[? "cost"])
             }
@@ -177,14 +177,14 @@ draw_text(190,45,global.map_name)
     }
 }	
 {//绘制已选择的卡组
-draw_sprite_ext(spr_ready_room_slot,0,x+1271,y+129,1.84,1.84,0,c_white,1)
+draw_sprite_ext(spr_ready_room_slot, 0, x+1271, y+129, 0.92, 0.92, 0, c_white, 1)
 for(var i = 0;i<11;i++){
-	draw_sprite_ext(spr_package_slot_bg,0,x+805+i*86,y + 130,1.8,1.8,0,c_white,1)
+	draw_sprite_ext(spr_package_slot_bg, 0, x+805+i*86, y + 130, 0.9, 0.9, 0, c_white, 1)
 	if i+deck_first_slot_index < global.save_data.unlocked_items.max_slot{
-		draw_sprite_ext(spr_ready_room_slot_number,i+deck_first_slot_index,x+805+i*86,y + 130,1.8,1.8,0,c_white,1)
+		draw_sprite_ext(spr_ready_room_slot_number, i+deck_first_slot_index, x+805+i*86, y + 130, 0.9, 0.9, 0, c_white, 1)
 	}
 	else{
-		draw_sprite_ext(spr_ready_room_slot_lock,0,x+805+i*86,y + 130,1.8,1.8,0,c_white,1)
+		draw_sprite_ext(spr_ready_room_slot_lock, 0, x+805+i*86, y + 130, 0.9, 0.9, 0, c_white, 1)
 	}
 	
 }
@@ -219,7 +219,7 @@ for(var i = deck_first_slot_index; i < deck_first_slot_index+11;i++){
 				}
 				var level = global.save_data.unlocked_cards[info_index].level
 				if level > 0{
-					draw_sprite_ext(spr_star_slot, level - 1, card_x-25, card_y-35,1.4,1.4,0,c_white,1);
+					draw_sprite_ext(spr_star_slot,  level - 1,  card_x-25,  card_y-35, 0.7, 0.7, 0, c_white, 1);
 				}
                 // 检查鼠标是否悬停在卡片上
                 var spr_width = 84;
@@ -247,9 +247,9 @@ for(var i = deck_first_slot_index; i < deck_first_slot_index+11;i++){
 	draw_set_font(font_yuan)
 	//绘制武器栏位
 	for(var i = 0;i < 3; i++){
-		draw_sprite_ext(spr_package_weapon_bg,0,x+120,y+160+100*i,2,2,0,c_white,1)
+		draw_sprite_ext(spr_package_weapon_bg, 0, x+120, y+160+100*i, 1, 1, 0, c_white, 1)
 		for(var j = 0; j < 3 ; j++){
-			draw_sprite_ext(spr_package_gem_bg,0,x+240+120*j,y+160+100*i,1.7,1.7,0,c_white,1)
+			draw_sprite_ext(spr_package_gem_bg, 0, x+240+120*j, y+160+100*i, 0.85, 0.85, 0, c_white, 1)
 		}
 	}
 	if global.save_data.equipped_items.main_weapon.id != ""{
@@ -258,9 +258,9 @@ for(var i = deck_first_slot_index; i < deck_first_slot_index+11;i++){
 		var gem_list = global.save_data.equipped_items.main_weapon.gems
 		for(var i = 0 ; i < array_length(gem_list);i++){
 			var gem_icon = get_gem_info(gem_list[i]).icon
-			draw_sprite_ext(gem_icon,0,x+240+120*i,y+160,1.6,1.6,0,c_white,1)
+			draw_sprite_ext(gem_icon,0,x+240+120*i,y+160,0.8,0.8,0,c_white,1)
 			if get_gem_level(gem_list[i]) > 0{
-				draw_sprite_ext(spr_star_slot,get_gem_level(gem_list[i])-1,x+215+120*i,y+134,1.5,1.5,0,c_white,1)
+				draw_sprite_ext(spr_star_slot, get_gem_level(gem_list[i])-1, x+215+120*i, y+134, 0.75, 0.75, 0, c_white, 1)
 			}
 		}
 	}
@@ -270,9 +270,9 @@ for(var i = deck_first_slot_index; i < deck_first_slot_index+11;i++){
 		var gem_list = global.save_data.equipped_items.secondary_weapon.gems
 		for(var i = 0 ; i < array_length(gem_list);i++){
 			var gem_icon = get_gem_info(gem_list[i]).icon
-			draw_sprite_ext(gem_icon,0,x+240+120*i,y+260,1.6,1.6,0,c_white,1)
+			draw_sprite_ext(gem_icon,0,x+240+120*i,y+260,0.8,0.8,0,c_white,1)
 			if get_gem_level(gem_list[i]) > 0{
-				draw_sprite_ext(spr_star_slot,get_gem_level(gem_list[i])-1,x+215+120*i,y+234,1.5,1.5,0,c_white,1)
+				draw_sprite_ext(spr_star_slot, get_gem_level(gem_list[i])-1, x+215+120*i, y+234, 0.75, 0.75, 0, c_white, 1)
 			}
 		}
 	}
@@ -282,9 +282,9 @@ for(var i = deck_first_slot_index; i < deck_first_slot_index+11;i++){
 		var gem_list = global.save_data.equipped_items.super_weapon.gems
 		for(var i = 0 ; i < array_length(gem_list);i++){
 			var gem_icon = get_gem_info(gem_list[i]).icon
-			draw_sprite_ext(gem_icon,0,x+240+120*i,y+360,1.6,1.6,0,c_white,1)
+			draw_sprite_ext(gem_icon,0,x+240+120*i,y+360,0.8,0.8,0,c_white,1)
 			if get_gem_level(gem_list[i]) > 0{
-				draw_sprite_ext(spr_star_slot,get_gem_level(gem_list[i])-1,x+215+120*i,y+334,1.5,1.5,0,c_white,1)
+				draw_sprite_ext(spr_star_slot, get_gem_level(gem_list[i])-1, x+215+120*i, y+334, 0.75, 0.75, 0, c_white, 1)
 			}
 		}
 	}

@@ -305,17 +305,33 @@ else if (state == "moving") {
 if (id == global._last_platform){
 // 渲染前以x/y为锚点，统一更新所有卡片的grid_col/grid_row和depth
 with (obj_card_parent) {
-    var grid_pos = get_grid_position_from_world(x, y)
-    // 平台移动中保留逻辑位置（与obj_card_parent Step_0一致），避免覆盖导致grid与注册脱节
-    if (!(variable_instance_exists(id, "platform_grid_lock") && platform_grid_lock)) {
-        grid_col = grid_pos.col
-        grid_row = grid_pos.row
-    }
     if (variable_instance_exists(id, "plant_type")) {
+		
+        // Keep registration coordinates locked while the platform migrates its grid lists.
+        // Rendering follows the visual position without breaking destruction/upgrade lookups.
+        var grid_pos = get_grid_position_from_world(x, y)
+        if (!(variable_instance_exists(id, "platform_grid_lock") && platform_grid_lock)) {
+            grid_col = grid_pos.col
+            grid_row = grid_pos.row
+        }
+
         var _type = plant_type
         if (object_index == obj_cotton_candy) _type = "lilypad"
-        depth = calculate_plant_depth(grid_col, grid_row, _type)
+		if (object_index == obj_soda_bubble){
+			if(card_equipped_attire_id(plant_id) != "bubble_maltose")_type = "coffee"
+			else _type = "lilypad"
+		}
+        depth = calculate_plant_depth(grid_pos.col, grid_pos.row, _type)
     }
+}
+
+var weapons = [obj_bubble_gun,obj_cat_gun,obj_double_water_gun,obj_enhanced_howitzer,obj_howitzer,obj_ice_gun,obj_ice_spoon_crossbow,obj_long_bao_gun,obj_mighty_gun,obj_player_shield,obj_poseidon_dart_gun,obj_star_gun,obj_steel_claw_gun];
+for(var i=0;i<array_length(weapons);i++){
+with (weapons[i]) {
+    if (variable_instance_exists(id, "parent_player")&&instance_exists(parent_player)) {
+        depth = parent_player.depth - 1
+    }
+}
 }
 
 with (obj_melon_shield_inner) {
@@ -323,4 +339,14 @@ with (obj_melon_shield_inner) {
         depth = parent_plant.depth + 2
     }
 }
+
+
+with (obj_stars) {
+    if (instance_exists(parent_card)) {
+        depth = parent_card.depth -1
+    }
+}
+
+
+
 }
