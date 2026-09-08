@@ -79,14 +79,14 @@ function cookbook_init(){
 			"rank":0,
 			"title":"美食豪华套餐",
 			"tiny_desc":"减少汉堡包和可乐炸弹冷却",
-			"desc":"汉堡包冷却时间减少2秒，生命值变为10倍\n可乐炸弹冷却时间减少2秒",
+			"desc":"汉堡包冷却时间减少1秒，生命值变为10倍\n可乐炸弹冷却时间减少1秒",
 			"icon":2,
 			"modif":[
 				{
 					"card_id":["hamburger","coke_bomb"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				},
 				{
 					"card_id":["hamburger"],
@@ -139,14 +139,14 @@ function cookbook_init(){
 			"rank":0,
 			"title":"葡式蛋挞",
 			"tiny_desc":"减少煮蛋器投手冷却",
-			"desc":"煮蛋器投手冷却时间减少2秒",
+			"desc":"煮蛋器投手冷却时间减少1秒",
 			"icon":5,
 			"modif":[
 				{
 					"card_id":["egg_boiler_pult"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -175,14 +175,14 @@ function cookbook_init(){
 			"rank":1,
 			"title":"王府井包子",
 			"tiny_desc":"减少包子卡冷却",
-			"desc":"除机枪小笼包外的包子类卡片冷却时间减少2秒",
+			"desc":"除机枪小笼包外的包子类卡片冷却时间减少1秒",
 			"icon":7,
 			"modif":[
 				{
 					"card_id":["xiao_long_bao","double_long_bao","ice_long_bao","double_ice_long_bao","gatlin_ice_long_bao","triple_long_bao","triple_ice_long_bao"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -259,7 +259,7 @@ function cookbook_init(){
 			"rank":1,
 			"title":"巧克力雪球",
 			"tiny_desc":"加强巧克力大炮",
-			"desc":"巧克力大炮冷却时间减少5秒，攻击间隔减少1秒",
+			"desc":"巧克力大炮冷却时间减少5秒，攻击间隔减少1秒\n巧克力投手冷却时间减少3秒",
 			"icon":12,
 			"modif":[
 				{
@@ -267,6 +267,12 @@ function cookbook_init(){
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
 					"amount":-5*60
+				},
+				{
+					"card_id":["chocolate_pult"],
+					"modif_type":"cooldown",
+					"modif_calc":"plus",
+					"amount":-3*60
 				},
 				{
 					"card_id":["chocolate_cannon"],
@@ -355,14 +361,14 @@ function cookbook_init(){
 			"rank":2,
 			"title":"拉菲限量版",
 			"tiny_desc":"减少三线酒架冷却",
-			"desc":"三线酒架冷却时间减少2秒",
+			"desc":"三线酒架冷却时间减少1秒",
 			"icon":17,
 			"modif":[
 				{
 					"card_id":["triple_wine_rack"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -409,7 +415,7 @@ function cookbook_init(){
 			"rank":2,
 			"title":"关东煮",
 			"tiny_desc":"减少关东煮喷锅和章鱼烧冷却",
-			"desc":"关东煮喷锅冷却时间减少2秒\n章鱼烧冷却时间减少5秒",
+			"desc":"关东煮喷锅冷却时间减少1秒\n章鱼烧冷却时间减少5秒",
 			"icon":20,
 			"modif":[
 				{
@@ -422,7 +428,7 @@ function cookbook_init(){
 					"card_id":["oden_pot"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -469,14 +475,14 @@ function cookbook_init(){
 			"rank":2,
 			"title":"水煮鱼",
 			"tiny_desc":"减少双向水管冷却",
-			"desc":"双向水管冷却时间减少2秒",
+			"desc":"双向水管冷却时间减少1秒",
 			"icon":23,
 			"modif":[
 				{
 					"card_id":["double_water_pipe"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -487,14 +493,14 @@ function cookbook_init(){
 			"rank":2,
 			"title":"老北京涮锅",
 			"tiny_desc":"减少浮空三锅冷却",
-			"desc":"麻辣香锅、肥牛火锅和生煎锅冷却时间减少2秒",
+			"desc":"麻辣香锅、肥牛火锅和生煎锅冷却时间减少1秒",
 			"icon":24,
 			"modif":[
 				{
 					"card_id":["spicy_pot","beef_hotpot","pan_fried_bun"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -505,14 +511,14 @@ function cookbook_init(){
 			"rank":2,
 			"title":"冰糖葫芦",
 			"tiny_desc":"减少糖葫芦炮弹冷却",
-			"desc":"糖葫芦炮弹冷却时间减少2秒",
+			"desc":"糖葫芦炮弹冷却时间减少1秒",
 			"icon":25,
 			"modif":[
 				{
 					"card_id":["tang_hu_lu"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}
@@ -523,14 +529,14 @@ function cookbook_init(){
 			"rank":2,
 			"title":"海鲜大咖",
 			"tiny_desc":"减少海底卡冷却",
-			"desc":"炭烧海星冷却时间减少2秒\n咖喱龙虾炮冷却时间减少5秒",
+			"desc":"炭烧海星冷却时间减少1秒\n咖喱龙虾炮冷却时间减少5秒",
 			"icon":26,
 			"modif":[
 				{
 					"card_id":["coal_starfish"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				},
 				{
 					"card_id":["curry_lobster_cannon"],
@@ -546,16 +552,10 @@ function cookbook_init(){
 		{
 			"rank":2,
 			"title":"太阳饼",
-			"tiny_desc":"减少产火卡冷却",
-			"desc":"小火炉和酒杯灯冷却时间减少2秒\n大火炉冷却时间减20秒",
+			"tiny_desc":"减少大火炉冷却",
+			"desc":"大火炉冷却时间减20秒",
 			"icon":31,
 			"modif":[
-				{
-					"card_id":["small_fire","goblet_lamp"],
-					"modif_type":"cooldown",
-					"modif_calc":"plus",
-					"amount":-2*60
-				},
 				{
 					"card_id":["large_fire"],
 					"modif_type":"cooldown",
@@ -571,14 +571,14 @@ function cookbook_init(){
 			"rank":2,
 			"title":"多元料理",
 			"tiny_desc":"减少勇士挑战奖励卡片冷却",
-			"desc":"迷你披萨炉和全能糖球投手冷却时间减少2秒",
+			"desc":"迷你披萨炉和全能糖球投手冷却时间减少1秒",
 			"icon":36,
 			"modif":[
 				{
 					"card_id":["pizza_oven","sugar_ball_pult"],
 					"modif_type":"cooldown",
 					"modif_calc":"plus",
-					"amount":-2*60
+					"amount":-1*60
 				}
 			]
 		}

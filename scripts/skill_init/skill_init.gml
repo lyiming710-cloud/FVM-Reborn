@@ -75,4 +75,5 @@ function skill_init(){
 	register_card_skill("horseshoe_crab_bread","cooldown",[30*60,28*60,26*60,24*60,22*60,20*60,18*60,15*60,12*60])
 	register_card_skill("sugar_ball_pult","cycle",[3.2*60,3.1*60,3*60,2.9*60,2.8*60,2.6*60,2.4*60,2.2*60,2*60])
 	register_card_skill("pizza_oven","cycle",[3.8*60,3.7*60,3.6*60,3.5*60,3.3*60,3.1*60,2.9*60,2.7*60,2.5*60])
+	register_card_skill("fruit_tart","hp",[50,100,150,200,250,300,350,400,450])
 }

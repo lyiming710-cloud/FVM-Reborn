@@ -1265,7 +1265,7 @@ function maps_init(){
 				},
 				{
 					"id":"macchiato_port_warrior",
-					"name":"古拉朵港",
+					"name":"吉拉朵港",
 					"button_spr":spr_levelselect_button_volcanic,
 					"button_index":16,
 					"button_x":1037,

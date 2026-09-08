@@ -346,4 +346,9 @@ function slots_init(){
 	    {"shape":1, "sprite":spr_pizza_oven_1, "cost":250, "cooldown":7*60, "description":"香脆披萨炉：发射披萨攻击最后一个敌人","plant_type":"normal","feature_type":"normal","target_card":"none","place_preview":spr_pizza_oven_1},
 		{"shape":2, "sprite":spr_pizza_oven_2, "cost":250, "cooldown":7*60, "description":"拉丝披萨炉：发射两个披萨攻击最后一个敌人","plant_type":"normal","feature_type":"normal","target_card":"none","place_preview":spr_pizza_oven_2}
 	]);
+	//register_card("fruit_tart", obj_fruit_tart, [
+	//    {"shape":0, "sprite":spr_fruit_tart, "cost":150, "cooldown":14*60, "description":"美味水果塔：为本行左侧的投掷类卡片增加伤害","plant_type":"normal","feature_type":"normal","target_card":"none","place_preview":spr_fruit_tart},
+	//    {"shape":1, "sprite":spr_fruit_tart_1, "cost":150, "cooldown":7*60, "description":"风车水果塔：为本行左侧的投掷类卡片增加伤害","plant_type":"normal","feature_type":"normal","target_card":"none","place_preview":spr_fruit_tart_1},
+	//	{"shape":2, "sprite":spr_fruit_tart_2, "cost":150, "cooldown":7*60, "description":"巧克力水果塔：为本行投掷类卡片增加伤害","plant_type":"normal","feature_type":"normal","target_card":"none","place_preview":spr_fruit_tart_2}
+	//]);
 }
