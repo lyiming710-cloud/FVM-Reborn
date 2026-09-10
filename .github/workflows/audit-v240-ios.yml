@@ -1,0 +1,95 @@
+name: Audit v2.4.0 iOS integration
+
+on:
+  push:
+    branches:
+      - audit-v240-ios-20260910
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan GML for iOS and 120FPS integration risks
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re, subprocess
+
+          BASE = 'abc644e8d70f4567f7f7eeb98ddaf4d6c3ce8678'
+          UP = '5c4fe15d05dd49c8f6990bc3cabf3a6e1efc70bc'
+
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).splitlines()
+
+          upstream_changed = set(git('diff', '--name-only', f'{BASE}..{UP}'))
+          upstream_added = set(git('diff', '--name-only', '--diff-filter=A', f'{BASE}..{UP}'))
+          changed_gml = sorted(p for p in upstream_changed if p.endswith('.gml') and Path(p).exists())
+          added_gml = sorted(p for p in upstream_added if p.endswith('.gml') and Path(p).exists())
+
+          print('AUDIT_BASE', BASE)
+          print('UPSTREAM_HEAD', UP)
+          print('CURRENT_HEAD', subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip())
+          print('UPSTREAM_CHANGED_GML', len(changed_gml))
+          print('UPSTREAM_ADDED_GML', len(added_gml))
+
+          print('\n=== NATIVE_CALLS_ALL_CURRENT_GML ===')
+          native_hits = 0
+          for path in sorted(Path('.').rglob('*.gml')):
+              lines = path.read_text(encoding='utf-8', errors='replace').splitlines()
+              for i, line in enumerate(lines, 1):
+                  if re.search(r'\bnative_[A-Za-z0-9_]+\b', line):
+                      native_hits += 1
+                      lo=max(1,i-3)
+                      context=' | '.join(f'{j}:{lines[j-1].strip()}' for j in range(lo,i+1))
+                      print(f'{path}:{i}: {context}')
+          print('NATIVE_HITS', native_hits)
+
+          print('\n=== UPSTREAM_CHANGED_COLLISIONS_WITHOUT_PAUSE_GUARD_CURRENT ===')
+          collision_risks=[]
+          for p in changed_gml:
+              if '/Collision_' in p:
+                  text=Path(p).read_text(encoding='utf-8', errors='replace')
+                  if 'global.is_paused' not in text and 'battle_skip_frame' not in text:
+                      collision_risks.append(p)
+                      print(p)
+          print('COUNT', len(collision_risks))
+
+          print('\n=== UPSTREAM_ADDED_END_STEPS_WITHOUT_PAUSE_GUARD_CURRENT ===')
+          endstep_risks=[]
+          for p in added_gml:
+              if p.startswith('objects/') and p.endswith('/Step_2.gml'):
+                  text=Path(p).read_text(encoding='utf-8', errors='replace')
+                  if 'global.is_paused' not in text and 'battle_skip_frame' not in text:
+                      endstep_risks.append(p)
+                      print(p)
+          print('COUNT', len(endstep_risks))
+
+          print('\n=== UPSTREAM_ADDED_STEP0_WITHOUT_PAUSE_GUARD_CURRENT ===')
+          step0_risks=[]
+          for p in added_gml:
+              if p.startswith('objects/') and p.endswith('/Step_0.gml'):
+                  text=Path(p).read_text(encoding='utf-8', errors='replace')
+                  if text.strip() and 'global.is_paused' not in text and 'battle_skip_frame' not in text:
+                      step0_risks.append(p)
+                      print(p)
+          print('COUNT', len(step0_risks))
+
+          print('\n=== UPSTREAM_CHANGED_SAVE_DATA_TOPLEVEL_FIELDS ===')
+          fields=set()
+          for p in changed_gml:
+              text=Path(p).read_text(encoding='utf-8', errors='replace')
+              fields.update(re.findall(r'global\.save_data\.([A-Za-z_][A-Za-z0-9_]*)', text))
+          print(' '.join(sorted(fields)))
+
+          print('\n=== WHEEL_ONLY_EVENTS_IN_UPSTREAM_ADDED_OBJECTS ===')
+          for p in sorted(upstream_added):
+              if p.endswith('/Mouse_60.gml') or p.endswith('/Mouse_61.gml'):
+                  print(p)
+
+          print('\n=== AUDIT_COMPLETE ===')
+          PY
