@@ -55,7 +55,7 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
 }
 
 // obj_battle_pause_manager - Step Event
-if (keyboard_check_pressed(vk_space) || virtual_pause_pressed) {
+if (keyboard_check_pressed(vk_space) || virtual_pause_pressed || (mouse_check_button_pressed(mb_left) && global.game_over)) {
     virtual_pause_pressed = false;
     //if global.selected_slot == noone {
         if (!_battle_paused) {
