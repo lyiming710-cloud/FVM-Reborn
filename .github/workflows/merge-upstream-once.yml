@@ -1,0 +1,32 @@
+name: Merge upstream once
+
+on:
+  push:
+    branches:
+      - merge-upstream-runner-2026-09-10
+    paths:
+      - .github/workflows/merge-upstream-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: merge-upstream-runner-2026-09-10
+          fetch-depth: 0
+
+      - name: Merge upstream with current custom conflict preference
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/Spring-SG/FVM-Reborn.git || true
+          git fetch upstream main
+          git merge --no-ff -s ort -X ours 5c4fe15d05dd49c8f6990bc3cabf3a6e1efc70bc -m "Merge upstream v2.4.0 while preserving iOS customizations"
+          git push origin HEAD:merge-upstream-runner-2026-09-10
