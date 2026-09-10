@@ -14,7 +14,9 @@ current_cookbook_list = []
 // can reach entries beyond the first six without changing list-button taps.
 cookbook_scrollbar_dragging = false
 cookbook_scrollbar_grab_offset = 0
-cookbook_scrollbar_x = x + 40
+// The background already reserves a narrow groove immediately to the right
+// of the recipe list. Keep the thumb inside that groove instead of the detail pane.
+cookbook_scrollbar_x = x - 20
 cookbook_scrollbar_width = 18
 cookbook_scrollbar_top = y - 190
 cookbook_scrollbar_bottom = y + 405

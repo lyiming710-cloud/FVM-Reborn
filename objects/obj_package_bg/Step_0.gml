@@ -1,23 +1,18 @@
-if close_timer > 0{
-	close_timer --
-}
-if close_timer == 0{
-	instance_destroy()
-}
-
-// Only the card-enhancement page has a vertically scrollable 20-row surface.
-if (button_select != 0 || is_submenu_opened) {
-    craft_scrollbar_dragging = false
-    exit
+// Keep the existing mouse-wheel y_offset semantics and add direct thumb dragging.
+var _row_height = 88
+var _visible_rows = 9
+if (package_button_select == 1) {
+    _row_height = 96
+    _visible_rows = 8
 }
 
-var _content_h = 96 * 20
-var _visible_h = 815
+var _content_h = package_rows * _row_height
+var _visible_h = _visible_rows * _row_height
 var _max_offset = max(0, _content_h - _visible_h)
 y_offset = clamp(y_offset, 0, _max_offset)
 
-if (_max_offset <= 0) {
-    craft_scrollbar_dragging = false
+if (_max_offset <= 0 || is_submenu_opened) {
+    package_scrollbar_dragging = false
     exit
 }
 
@@ -38,37 +33,37 @@ if (_use_ios_pointer) {
     }
 }
 
-var _track_h = craft_scrollbar_bottom - craft_scrollbar_top
+var _track_h = package_scrollbar_bottom - package_scrollbar_top
 var _thumb_h = max(64, _track_h * min(1, _visible_h / _content_h))
 var _travel = max(1, _track_h - _thumb_h)
-var _thumb_top = craft_scrollbar_top + (y_offset / _max_offset) * _travel
-var _bar_left = craft_scrollbar_x - 8
-var _bar_right = craft_scrollbar_x + craft_scrollbar_width + 8
+var _thumb_top = package_scrollbar_top + (y_offset / _max_offset) * _travel
+var _bar_left = package_scrollbar_x - 8
+var _bar_right = package_scrollbar_x + package_scrollbar_width + 8
 
 if (_pointer_pressed && point_in_rectangle(_pointer_x, _pointer_y,
-    _bar_left, craft_scrollbar_top, _bar_right, craft_scrollbar_bottom)) {
-    craft_scrollbar_dragging = true
+    _bar_left, package_scrollbar_top, _bar_right, package_scrollbar_bottom)) {
+    package_scrollbar_dragging = true
     if (point_in_rectangle(_pointer_x, _pointer_y,
         _bar_left, _thumb_top, _bar_right, _thumb_top + _thumb_h)) {
-        craft_scrollbar_grab_offset = _pointer_y - _thumb_top
+        package_scrollbar_grab_offset = _pointer_y - _thumb_top
     }
     else {
-        craft_scrollbar_grab_offset = _thumb_h * 0.5
+        package_scrollbar_grab_offset = _thumb_h * 0.5
     }
     if (_use_ios_pointer) global.pointer_input.consumed = true
 }
 
-if (craft_scrollbar_dragging) {
+if (package_scrollbar_dragging) {
     if (_pointer_down) {
-        var _new_thumb_top = clamp(_pointer_y - craft_scrollbar_grab_offset,
-            craft_scrollbar_top, craft_scrollbar_bottom - _thumb_h)
-        y_offset = ((_new_thumb_top - craft_scrollbar_top) / _travel) * _max_offset
+        var _new_thumb_top = clamp(_pointer_y - package_scrollbar_grab_offset,
+            package_scrollbar_top, package_scrollbar_bottom - _thumb_h)
+        y_offset = ((_new_thumb_top - package_scrollbar_top) / _travel) * _max_offset
         y_offset = clamp(y_offset, 0, _max_offset)
         if (_use_ios_pointer) global.pointer_input.consumed = true
     }
 
     if (_pointer_released || !_pointer_down) {
-        craft_scrollbar_dragging = false
+        package_scrollbar_dragging = false
         if (_use_ios_pointer) global.pointer_input.consumed = true
     }
 }

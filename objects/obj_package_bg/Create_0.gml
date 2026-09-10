@@ -9,6 +9,16 @@ is_submenu_opened = false
 gem_start_line = 0
 y_offset = 0
 package_surface = -1
+
+// Touch-accessible scrollbar for the backpack grid. It sits just outside the
+// last item column, so dragging it cannot select a card, weapon, gem or material.
+package_scrollbar_dragging = false
+package_scrollbar_grab_offset = 0
+package_scrollbar_x = x + 368
+package_scrollbar_width = 16
+package_scrollbar_top = y - 405
+package_scrollbar_bottom = y + 365
+
 //创建背包栏位选择按钮
 var btn1 = instance_create_depth(x-300,y-455,depth-1,obj_packageselect_btn)
 btn1.type = "Package"

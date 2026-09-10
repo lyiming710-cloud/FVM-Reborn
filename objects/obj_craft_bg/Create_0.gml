@@ -25,6 +25,15 @@ close_timer = -1
 y_offset = 0
 card_surface = -1
 
+// The card enhancement surface is 600x815 and ends at x+754. Put the touch
+// scrollbar immediately outside it so the seventh card column remains clickable.
+craft_scrollbar_dragging = false
+craft_scrollbar_grab_offset = 0
+craft_scrollbar_x = x + 762
+craft_scrollbar_width = 16
+craft_scrollbar_top = y - 369
+craft_scrollbar_bottom = y + 446
+
 current_uprade_target_id = ""
 
 spices_use_order = ["natural_spices","secret_spices","royal_spices"]
