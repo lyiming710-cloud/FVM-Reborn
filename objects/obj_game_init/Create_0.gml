@@ -49,6 +49,7 @@ global.debug = 0
 global.laboretory_room = false
 global.game_version = "2.4.0"
 global.tower_level_click = false
+global.tower_cake_page = 1
 Music_Init()
 
 global.laboratory_manager = new LaboratoryManager()
