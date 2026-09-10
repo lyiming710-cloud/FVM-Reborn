@@ -87,34 +87,35 @@ function draw_games_page(){
 	    
 		
 		// 创建植物血条开关
-	    var btn1 = instance_create_depth(x - 200, y - 170, depth-1, obj_setting_toggle);
+	    var btn1 = instance_create_depth(x - 200, y - 140, depth-1, obj_setting_toggle);
 	    btn1.config_key = "card_hpbar";
 	    btn1.state = global.card_hpbar;
 	    array_push(setting_buttons, btn1);
 		
 		// 创建敌人血条开关
-	    var btn2 = instance_create_depth(x - 200, y - 70, depth-1, obj_setting_toggle);
+	    var btn2 = instance_create_depth(x - 200, y - 40, depth-1, obj_setting_toggle);
 	    btn2.config_key = "enemy_hpbar";
 	    btn2.state = global.enemy_hpbar;
 	    array_push(setting_buttons, btn2);
 		
 		// 创建难度开关
-	    var btn3 = instance_create_depth(x - 200, y + 80, depth-1, obj_difficulty_select_btn);
+	    var btn3 = instance_create_depth(x - 200, y + 110, depth-1, obj_difficulty_select_btn);
 	    btn3.config_key = "difficulty";
 	    btn3.state = global.difficulty;
 		btn3.b_type = "prev"
 	    array_push(setting_buttons, btn3);
-		var btn32 = instance_create_depth(x + 225, y + 80, depth-1, obj_difficulty_select_btn);
+		var btn32 = instance_create_depth(x + 225, y + 110, depth-1, obj_difficulty_select_btn);
 	    btn32.config_key = "difficulty";
 	    btn32.state = global.difficulty;
 		btn32.b_type = "next"
-		btn32.image_xscale = -1.8
+		btn32.image_xscale = -0.9
 	    array_push(setting_buttons, btn32);
 		
 		// 创建失焦暂停开关
-	    var btn4 = instance_create_depth(x - 200, y + 230, depth-1, obj_setting_toggle);
+	    var btn4 = instance_create_depth(x - 200, y + 260, depth-1, obj_setting_toggle);
 	    btn4.config_key = "lose_focus_pause";
 	    btn4.state = global.lose_focus_pause;
+		btn4.tooltip_text = "切换窗口时，游戏自动暂停"
 	    array_push(setting_buttons, btn4);
     
 	    // 标记当前设置页面
@@ -146,7 +147,7 @@ function draw_audio_page(){
 	    array_push(setting_buttons, slider_music);
     
 	    // 创建音乐静音按钮
-	    var mute_music = instance_create_depth(slider_max_x + 45, slider_y+3, depth-1, obj_mute_button);
+	    var mute_music = instance_create_depth(slider_max_x + 52, slider_y+3, depth-1, obj_mute_button);
 	    mute_music.volume_type = "music";
 	    array_push(setting_buttons, mute_music);
     
@@ -160,7 +161,7 @@ function draw_audio_page(){
 	    array_push(setting_buttons, slider_sound);
     
 	    // 创建音效静音按钮
-	    var mute_sound = instance_create_depth(slider_max_x + 45, slider_y+3, depth-1, obj_mute_button);
+	    var mute_sound = instance_create_depth(slider_max_x + 52, slider_y+3, depth-1, obj_mute_button);
 	    mute_sound.volume_type = "sound";
 	    array_push(setting_buttons, mute_sound);
     
