@@ -63,3 +63,24 @@ else{
 		}
 	}
 }
+
+// More than six recipes require scrolling. Upstream exposes only wheel events;
+// render a narrow drag target as the touch-accessible equivalent.
+var _cookbook_max_offset = max(0, array_length(current_cookbook_list) - 6)
+if (_cookbook_max_offset > 0) {
+    var _cookbook_track_h = cookbook_scrollbar_bottom - cookbook_scrollbar_top
+    var _cookbook_thumb_h = max(64, _cookbook_track_h * min(1, 6 / array_length(current_cookbook_list)))
+    var _cookbook_travel = max(1, _cookbook_track_h - _cookbook_thumb_h)
+    var _cookbook_thumb_top = cookbook_scrollbar_top + (clamp(y_offset, 0, _cookbook_max_offset) / _cookbook_max_offset) * _cookbook_travel
+
+    draw_set_alpha(0.35)
+    draw_set_colour(c_black)
+    draw_rectangle(cookbook_scrollbar_x, cookbook_scrollbar_top,
+        cookbook_scrollbar_x + cookbook_scrollbar_width, cookbook_scrollbar_bottom, false)
+    draw_set_alpha(0.85)
+    draw_set_colour(c_white)
+    draw_rectangle(cookbook_scrollbar_x, _cookbook_thumb_top,
+        cookbook_scrollbar_x + cookbook_scrollbar_width, _cookbook_thumb_top + _cookbook_thumb_h, false)
+    draw_set_alpha(1)
+    draw_set_colour(c_white)
+}

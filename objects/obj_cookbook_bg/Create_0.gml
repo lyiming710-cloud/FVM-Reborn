@@ -9,6 +9,16 @@ y_offset = 0
 
 current_cookbook_list = []
 
+// The upstream cookbook list only supports mouse-wheel paging. Keep that
+// behavior, but also expose a draggable scrollbar so touch-only iPad users
+// can reach entries beyond the first six without changing list-button taps.
+cookbook_scrollbar_dragging = false
+cookbook_scrollbar_grab_offset = 0
+cookbook_scrollbar_x = x + 40
+cookbook_scrollbar_width = 18
+cookbook_scrollbar_top = y - 190
+cookbook_scrollbar_bottom = y + 405
+
 instance_create_depth(x+710,y-410,depth-1,obj_closecookbook_btn)
 
 var btn1 = instance_create_depth(x-376,y-335,depth-5,obj_cookbook_select_btn)
