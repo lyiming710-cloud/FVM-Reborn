@@ -34,7 +34,6 @@ jobs:
     timeout-minutes: 90
     env:
       GH_TOKEN: ${{ github.token }}
-      RELEASE_TAG: ios-current
 
     steps:
       - name: Checkout
@@ -146,15 +145,16 @@ jobs:
             APP="$(find "$DERIVED/Build/Products" -type d -name '*.app' -print -quit || true)"
           fi
 
-          # The unsigned game package must not contain the generated test
-          # bundle or the Windows-only native DLL.
-          find "$APP" -type d -name '*.xctest' -prune -exec rm -rf {} +
-          find "$APP" -type f -iname '*.dll' -delete
           if [ -z "$APP" ]; then
             echo "::error::Xcode build completed but no .app was found"
             find "$DERIVED/Build/Products" -maxdepth 5 -print || true
             exit 1
           fi
+
+          # The unsigned game package must not contain the generated test
+          # bundle or the Windows-only native DLL.
+          find "$APP" -type d -name '*.xctest' -prune -exec rm -rf {} +
+          find "$APP" -type f -iname '*.dll' -delete
 
           IPA_DIR="$RUNNER_TEMP/ipa"
           rm -rf "$IPA_DIR"
@@ -166,46 +166,31 @@ jobs:
           ls -lh "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa"
           shasum -a 256 "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa" | tee "$GITHUB_WORKSPACE/FVM-Reborn-unsigned.ipa.sha256"
 
-      - name: Publish only current IPA
+      - name: Publish versioned IPA release
         shell: bash
         run: |
           set -euo pipefail
 
-          TITLE="FVM-Reborn current unsigned iOS IPA"
-          NOTES="Current unsigned iOS build from commit $GITHUB_SHA. The ios-current tag is a fixed release anchor; the IPA and checksum assets are replaced only after a successful build."
+          RELEASE_TAG="ios-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          TITLE="FVM-Reborn unsigned iOS build #${GITHUB_RUN_NUMBER}"
+          NOTES="Unsigned iOS build from commit ${GITHUB_SHA}. GitHub Actions run ${GITHUB_RUN_ID}, attempt ${GITHUB_RUN_ATTEMPT}."
 
-          # ios-current is intentionally immutable after its first creation.
-          # Never delete, force-move, or recreate an existing tag. This keeps
-          # protected-tag rules compatible with a stable rolling download URL.
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" \
-              FVM-Reborn-unsigned.ipa \
-              FVM-Reborn-unsigned.ipa.sha256 \
-              --repo "$GITHUB_REPOSITORY" \
-              --clobber
-            gh release edit "$RELEASE_TAG" \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "$TITLE" \
-              --notes "$NOTES"
-          elif git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            # Recovery path: the fixed tag exists but its Release was removed.
-            gh release create "$RELEASE_TAG" \
-              FVM-Reborn-unsigned.ipa \
-              FVM-Reborn-unsigned.ipa.sha256 \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "$TITLE" \
-              --notes "$NOTES"
-          else
-            # One-time bootstrap only. GitHub creates the fixed tag at this
-            # successful build commit; subsequent runs never move it.
-            gh release create "$RELEASE_TAG" \
-              FVM-Reborn-unsigned.ipa \
-              FVM-Reborn-unsigned.ipa.sha256 \
-              --repo "$GITHUB_REPOSITORY" \
-              --target "$GITHUB_SHA" \
-              --title "$TITLE" \
-              --notes "$NOTES"
-          fi
+          # Every successful build receives a new immutable tag and Release.
+          # This avoids all dependency on the old rolling ios-current tag.
+          gh release create "$RELEASE_TAG" \
+            FVM-Reborn-unsigned.ipa \
+            FVM-Reborn-unsigned.ipa.sha256 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --notes "$NOTES"
+
+          {
+            echo "### iOS release"
+            echo "Tag: \`$RELEASE_TAG\`"
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload GameMaker build diagnostics on failure
         if: failure() && steps.gm.outputs.out-dir != ''
