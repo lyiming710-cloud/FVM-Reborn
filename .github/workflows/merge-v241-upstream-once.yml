@@ -1,0 +1,53 @@
+name: Merge upstream v2.4.1 once
+
+on:
+  push:
+    branches:
+      - merge-v241-ios-20260913
+    paths:
+      - .github/workflows/merge-v241-upstream-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout integration branch
+        uses: actions/checkout@v4
+        with:
+          ref: merge-v241-ios-20260913
+          fetch-depth: 0
+
+      - name: Audit conflicts then merge upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/Spring-SG/FVM-Reborn.git || true
+          git fetch upstream main
+          test "$(git rev-parse upstream/main)" = "0e9f83aa18d1fe49500f5d081074c950a9e21988"
+
+          set +e
+          git merge --no-commit --no-ff upstream/main
+          merge_rc=$?
+          set -e
+          if [ "$merge_rc" -ne 0 ]; then
+            git diff --name-only --diff-filter=U | sort > /tmp/upstream-v241-conflicts.txt
+          else
+            : > /tmp/upstream-v241-conflicts.txt
+          fi
+          git merge --abort || true
+
+          printf '# Upstream v2.4.1 merge conflict audit\n\n' > .github/upstream-v241-conflicts.txt
+          printf 'Base before merge: %s\n' "$(git rev-parse HEAD)" >> .github/upstream-v241-conflicts.txt
+          printf 'Upstream: %s\n\n' "$(git rev-parse upstream/main)" >> .github/upstream-v241-conflicts.txt
+          printf 'Conflict files:\n' >> .github/upstream-v241-conflicts.txt
+          cat /tmp/upstream-v241-conflicts.txt >> .github/upstream-v241-conflicts.txt
+          git add .github/upstream-v241-conflicts.txt
+          git commit -m "Record v2.4.1 upstream merge conflicts"
+
+          git merge --no-ff -s ort -X ours upstream/main -m "Merge upstream v2.4.1 while preserving iOS customizations"
+          git push origin HEAD:merge-v241-ios-20260913
