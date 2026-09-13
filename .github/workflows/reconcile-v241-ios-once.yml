@@ -37,24 +37,16 @@ jobs:
           def upstream(path):
               return subprocess.check_output(["git", "show", f"upstream/main:{path}"], text=True)
 
-          # 1) Windows native support: take upstream v7.3 IME + archive extraction,
-          # then reapply the fork's path-traversal hardening for backup restore.
+          # 1. Take upstream native v7.3 + archive extraction, then restore the
+          # fork's backup-restore path traversal protections.
           path = "FvmNativeSupport/FvmNativeSupport/entry.h"
           text = upstream(path)
-          old = '''  for (const auto &file_entry : backup_json["files"]) {
-            if (!file_entry.contains("name") || !file_entry.contains("content")) {
-              return FailWith(NativeError::JsonParseFailed,
-                              "RestoreBackupWithTargetFile: invalid file entry");
-            }
-            std::string name = file_entry["name"];
-            std::string content = file_entry["content"];
-
-            fs::path file_path =
-                fs::path(w_saves_dir) / FileSystem::Utf8ToUtf16(name.c_str());
-
-            std::vector<uint8_t> data(content.begin(), content.end());
-          '''
-          new = '''  for (const auto &file_entry : backup_json["files"]) {
+          begin = '  for (const auto &file_entry : backup_json["files"]) {'
+          data_line = '    std::vector<uint8_t> data(content.begin(), content.end());'
+          start = text.index(begin)
+          data_pos = text.index(data_line, start)
+          end = data_pos + len(data_line)
+          hardened = '''  for (const auto &file_entry : backup_json["files"]) {
             if (!file_entry.contains("name") || !file_entry["name"].is_string() ||
                 !file_entry.contains("content") ||
                 !file_entry["content"].is_string()) {
@@ -88,53 +80,45 @@ jobs:
                   "RestoreBackupWithTargetFile: destination escaped save root");
             }
 
-            std::vector<uint8_t> data(content.begin(), content.end());
-          '''
-          if old not in text:
-              raise SystemExit("entry.h restore block did not match expected upstream text")
-          Path(path).write_text(text.replace(old, new, 1), encoding="utf-8")
+            std::vector<uint8_t> data(content.begin(), content.end());'''
+          Path(path).write_text(text[:start] + hardened + text[end:], encoding="utf-8")
 
-          # 2) File manager: keep all upstream v7.3 dynamic IME behavior, but never
-          # read Windows extension functions on iOS/other platforms.
+          # 2. Take upstream dynamic IME state handling, but make every native IME
+          # reference Windows-only so the persistent manager remains safe on iOS.
           path = "objects/obj_file_manager/Step_0.gml"
           text = upstream(path)
           marker = "// 输入法屏蔽心跳"
-          idx = text.find(marker)
-          if idx < 0:
-              raise SystemExit("obj_file_manager IME marker not found")
+          idx = text.index(marker)
           prefix, ime = text[:idx], text[idx:]
           ime = "\n".join(("    " + line) if line else line for line in ime.splitlines())
           Path(path).write_text(prefix + "if (os_type == os_windows) {\n" + ime + "\n}\n", encoding="utf-8")
 
-          # 3) Text input: use upstream's centralized IME ownership, while retaining
-          # the fork's iOS pointer coordinates.
+          # 3. Take upstream centralized IME ownership but retain the iOS unified
+          # pointer coordinates for tapping a text field.
           path = "objects/obj_text_input/Mouse_53.gml"
           text = upstream(path)
-          old = '''// 检查是否点击了输入框
-          if (point_in_rectangle(mouse_x, mouse_y, x, y, x + width, y + height)) {
-          '''
-          new = '''// 检查是否点击了输入框；iOS 使用统一触摸指针坐标。
-          var _click_x = (os_type == os_ios && global.pointer_input.device_only)
+          click = 'if (point_in_rectangle(mouse_x, mouse_y, x, y, x + width, y + height)) {'
+          if click not in text:
+              raise SystemExit("obj_text_input click expression not found")
+          pointer = '''var _click_x = (os_type == os_ios && global.pointer_input.device_only)
               ? global.pointer_input.x : mouse_x;
           var _click_y = (os_type == os_ios && global.pointer_input.device_only)
               ? global.pointer_input.y : mouse_y;
-          if (point_in_rectangle(_click_x, _click_y, x, y, x + width, y + height)) {
-          '''
-          if old not in text:
-              raise SystemExit("obj_text_input click block did not match expected upstream text")
-          Path(path).write_text(text.replace(old, new, 1), encoding="utf-8")
+          if (point_in_rectangle(_click_x, _click_y, x, y, x + width, y + height)) {'''
+          text = text.replace(click, pointer, 1)
+          Path(path).write_text(text, encoding="utf-8")
 
-          # 4) Laboratory: adopt upstream local/online switching. Online map package
-          # install currently depends on Windows native 7-Zip, so block the online
-          # entry on iOS rather than allowing an undefined native_util crash.
+          # 4. Take upstream Laboratory local/online UX. Online package management
+          # currently requires the Windows native unzip implementation, so iOS gets
+          # a notice instead of dereferencing undefined global.native_util.
           path = "objects/LaboratoryGUI/Create_0.gml"
           text = upstream(path)
-          old = '''function open_online_gui() {
+          open_prefix = '''function open_online_gui() {
               if (!is_local_mode()) {
                   return
               }
           '''
-          new = '''function open_online_gui() {
+          guarded_prefix = '''function open_online_gui() {
               if (!is_local_mode()) {
                   return
               }
@@ -143,22 +127,19 @@ jobs:
                   return
               }
           '''
-          if old not in text:
-              raise SystemExit("LaboratoryGUI open_online_gui block not found")
-          text = text.replace(old, new, 1)
-          old = '''            } else {
-                          var _target = global.native_util.get_path_in_local_appdata("\\\\FVM_Reborn\\\\laboratory")
-          '''
-          new = '''            } else {
-                          if (os_type != os_windows) {
+          if open_prefix not in text:
+              raise SystemExit("LaboratoryGUI online entry block not found")
+          text = text.replace(open_prefix, guarded_prefix, 1)
+          target = '                var _target = global.native_util.get_path_in_local_appdata("\\\\FVM_Reborn\\\\laboratory")'
+          if target not in text:
+              raise SystemExit("LaboratoryGUI native folder call not found")
+          guarded_target = '''                if (os_type != os_windows) {
                               show_notice("当前平台暂不支持直接打开实验室文件夹", 120)
                               return
                           }
-                          var _target = global.native_util.get_path_in_local_appdata("\\\\FVM_Reborn\\\\laboratory")
-          '''
-          if old not in text:
-              raise SystemExit("LaboratoryGUI native folder block not found")
-          Path(path).write_text(text.replace(old, new, 1), encoding="utf-8")
+          ''' + target
+          text = text.replace(target, guarded_target, 1)
+          Path(path).write_text(text, encoding="utf-8")
           PY
 
           git add FvmNativeSupport/FvmNativeSupport/entry.h \
