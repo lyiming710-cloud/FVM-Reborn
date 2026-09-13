@@ -170,22 +170,42 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Replace only this project's rolling IPA after the new package has
-          # built and passed the checks above. Never delete unrelated releases
-          # or failure diagnostics.
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
-          elif git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$RELEASE_TAG"
-          fi
 
-          gh release create "$RELEASE_TAG" \
-            FVM-Reborn-unsigned.ipa \
-            FVM-Reborn-unsigned.ipa.sha256 \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "FVM-Reborn current unsigned iOS IPA" \
-            --notes "Current unsigned iOS build from commit $GITHUB_SHA. This rolling release replaces only the previous ios-current IPA after a successful build."
+          TITLE="FVM-Reborn current unsigned iOS IPA"
+          NOTES="Current unsigned iOS build from commit $GITHUB_SHA. The ios-current tag is a fixed release anchor; the IPA and checksum assets are replaced only after a successful build."
+
+          # ios-current is intentionally immutable after its first creation.
+          # Never delete, force-move, or recreate an existing tag. This keeps
+          # protected-tag rules compatible with a stable rolling download URL.
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" \
+              FVM-Reborn-unsigned.ipa \
+              FVM-Reborn-unsigned.ipa.sha256 \
+              --repo "$GITHUB_REPOSITORY" \
+              --clobber
+            gh release edit "$RELEASE_TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" \
+              --notes "$NOTES"
+          elif git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            # Recovery path: the fixed tag exists but its Release was removed.
+            gh release create "$RELEASE_TAG" \
+              FVM-Reborn-unsigned.ipa \
+              FVM-Reborn-unsigned.ipa.sha256 \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "$TITLE" \
+              --notes "$NOTES"
+          else
+            # One-time bootstrap only. GitHub creates the fixed tag at this
+            # successful build commit; subsequent runs never move it.
+            gh release create "$RELEASE_TAG" \
+              FVM-Reborn-unsigned.ipa \
+              FVM-Reborn-unsigned.ipa.sha256 \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "$TITLE" \
+              --notes "$NOTES"
+          fi
 
       - name: Upload GameMaker build diagnostics on failure
         if: failure() && steps.gm.outputs.out-dir != ''
