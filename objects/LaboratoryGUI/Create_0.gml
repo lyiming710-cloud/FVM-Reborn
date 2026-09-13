@@ -109,6 +109,10 @@ function open_online_gui() {
     if (!is_local_mode()) {
         return
     }
+    if (os_type != os_windows) {
+        show_notice("在线实验室地图下载目前仅支持 Windows", 120)
+        return
+    }
     if (!is_undefined(self.state.search_box) && instance_exists(self.state.search_box)) {
         self.state.search_box.blur()
         self.state.search_box.visible = false
@@ -186,15 +190,20 @@ function create_widgets() {
         .set_should_correspond(method({gui_state: self.state}, function() {
             return gui_state.current_stage_id == ""
         }))
-	        .set_on_click(method({}, function() {
-			if (os_type != os_windows) {
-				show_notice("当前平台暂不支持直接打开实验室文件夹", 120)
-				return
-			}
-	            var _target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\laboratory")
-            var _error_code = native_open_folder(_target)
-            if (_error_code != 0) {
-                global.native_util.show_error(_error_code, "打开实验室文件夹失败")
+        .set_on_click(method({gui_state: self.state, close_fn: close_online_gui}, function() {
+            var _online_visible = !is_undefined(gui_state.online_gui) && instance_exists(gui_state.online_gui)
+            if (_online_visible) {
+                close_fn()
+            } else {
+                if (os_type != os_windows) {
+                    show_notice("当前平台暂不支持直接打开实验室文件夹", 120)
+                    return
+                }
+                var _target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\laboratory")
+                var _error_code = native_open_folder(_target)
+                if (_error_code != 0) {
+                    global.native_util.show_error(_error_code, "打开实验室文件夹失败")
+                }
             }
         }))
 
