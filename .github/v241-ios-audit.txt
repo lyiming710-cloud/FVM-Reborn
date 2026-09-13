@@ -1,0 +1,43 @@
+# v2.4.1 iOS integration static audit
+
+Upstream range: 5c4fe15d05dd49c8f6990bc3cabf3a6e1efc70bc..0e9f83aa18d1fe49500f5d081074c950a9e21988
+Changed GML: 72
+Changed Step/Collision events: 19
+
+## Changed Step/Collision events without early pause reference
+objects/OnlineMapGUI/Step_0.gml
+objects/OnlineStageDetail/Step_0.gml
+objects/OnlineStageItem/Step_0.gml
+objects/SearchBox/Step_0.gml
+objects/obj_file_manager/Step_0.gml
+objects/obj_text_input/Step_0.gml
+
+## Changed GML with Windows-native references
+objects/LaboratoryGUI/Create_0.gml
+objects/OnlineMapGUI/Create_0.gml
+objects/SearchBox/Create_0.gml
+objects/obj_file_manager/Step_0.gml
+objects/obj_game_init/Create_0.gml
+scripts/MapDownloadManager/MapDownloadManager.gml
+scripts/NativeUtil/NativeUtil.gml
+
+## All changed Step/Collision events
+objects/OnlineMapGUI/Step_0.gml
+objects/OnlineStageDetail/Step_0.gml
+objects/OnlineStageItem/Step_0.gml
+objects/SearchBox/Step_0.gml
+objects/obj_charge_spring_mouse/Step_0.gml
+objects/obj_delicacy_firework/Step_0.gml
+objects/obj_double_ice_crossbow/Step_0.gml
+objects/obj_file_manager/Step_0.gml
+objects/obj_ice_mighty_gun/Step_0.gml
+objects/obj_kettle_slowdown_effect/Step_0.gml
+objects/obj_lantern_burn_effect/Step_0.gml
+objects/obj_odenpot_bullet_vertical/Step_0.gml
+objects/obj_pizzaoven_bullet/Step_0.gml
+objects/obj_player_character/Step_0.gml
+objects/obj_rabbit_lantern/Step_0.gml
+objects/obj_rotating_water_gun/Step_0.gml
+objects/obj_text_input/Step_0.gml
+objects/obj_thor_body/Step_0.gml
+objects/obj_thor_head/Step_0.gml
