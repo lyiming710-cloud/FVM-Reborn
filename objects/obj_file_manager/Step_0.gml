@@ -61,15 +61,8 @@ var _ime_typing = (_ime_typing_count > 0);
     }
 }
 
-// 非输入状态每 60 帧重压一次，防止焦点事件把 IME 上下文挂回来
-ime_tick++;
-if (!_ime_typing && ime_tick >= 60) {
-    ime_tick = 0;
-    if (global.ime_block && native_disable_ime != undefined) {
-        native_disable_ime(window_handle());
-    }
-}
-
+// Windows-only low-level mouse hook: never touch native DLL APIs on iOS.
+if (os_type == os_windows) {
 // ═══ 鼠标限频的「玩家在游戏里」开关（每 10 帧）═══════════════════════════════════
 // 由游戏自己判断是否有焦点，native 侧不做任何前台/几何判断：有焦点才限频，失去焦点
 // 立刻停，桌面和其它程序的鼠标完全不受影响。
@@ -107,4 +100,5 @@ if (ml_tick >= 10) {
             ml_on = false;
         }
     }
+}
 }
