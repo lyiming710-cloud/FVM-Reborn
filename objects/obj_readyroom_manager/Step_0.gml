@@ -1,9 +1,18 @@
 
-    if (not audio_is_playing(readyroom_music)) {
-        // 停止可能存在的暂停实例
-        audio_stop_sound(readyroom_music);
-        // 从头开始播放新实例
-        global.audio.play(readyroom_music, 0, 0);
+if (not audio_is_playing(readyroom_music)) {
+    audio_stop_sound(readyroom_music);
+    global.audio.play(readyroom_music, 0, 0);
+}
+
+// Always derive the lock from real instances before reading it.
+is_submenu_open = instance_exists(obj_quit_confirm) || instance_exists(obj_level_preview);
+
+var _readyroom_esc = keyboard_check_pressed(vk_escape);
+var _readyroom_right_click = mouse_check_button_pressed(mb_right);
+if (_readyroom_esc || _readyroom_right_click) {
+    // Close the current top-level ready-room modal first.
+    if (instance_exists(obj_level_preview)) {
+        instance_destroy(obj_level_preview);
     }
     else if (instance_exists(obj_quit_confirm)) {
         instance_destroy(obj_quit_confirm);
@@ -44,14 +53,9 @@ if os_type == os_ios{
 	}
 }
 
-// 飞入动画推进（线性：每帧固定位移，到点后由槽位绘制接手）
-if fly_active{
-	fly_t++
-	if fly_t >= fly_dur fly_active = false
-}
-
-if instance_exists(obj_quit_confirm) || instance_exists(obj_level_preview){
-	is_submenu_open = true
+if is_submenu_open{
+	card_scroll_dragging = false
+	card_scrollbar_dragging = false
 }
 else{
 	if _scroll_pointer_pressed{
@@ -127,6 +131,54 @@ else{
 		card_scrollbar_dragging = false
 		card_scroll_moved = false
 	}
+}
+
+readyroom_refresh_card_scroll_metrics()
+
+
+// 飞入动画推进（线性：每帧固定位移，到点后由槽位绘制接手）
+if fly_active{
+	fly_t++
+	if fly_t >= fly_dur fly_active = false
+}
+
+// Coordinate-driven fallback for the parts of the ready room that use a
+// Global Mouse event instead of button instances. The persistent pointer
+// controller guarantees this edge is seen only once.
+if (os_type == os_ios && global.pointer_input.device_only &&
+    !global.pointer_input.consumed && !is_submenu_open) {
+        var _px = global.pointer_input.x;
+	        var _py = global.pointer_input.y;
+	        var _handled = false;
+
+	        // Remove a selected card directly.
+	        if (!_handled) {
+            for (var _slot = deck_first_slot_index; _slot < deck_first_slot_index + 11; _slot++) {
+                if (_slot < deck_slot_max() && !deck_slot_is_empty(_slot)) {
+                    var _sx = x + 805 + (_slot - deck_first_slot_index) * 86;
+                    var _sy = y + 132;
+                    if (point_in_rectangle(_px, _py, _sx - 42, _sy - 48, _sx + 42, _sy + 48)) {
+                        global.audio.play(snd_button, 0, 0);
+                        remove_from_deck(_slot);
+                        _handled = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Level preview region.
+        if (!_handled && _px > 785 && _px < 1546 && _py > 762 && _py < 980) {
+            global.audio.play(snd_button, 0, 0);
+            var _preview = instance_create_depth(0, 0, -500, obj_level_preview);
+            _preview.enemy_type_list = enemy_type_list;
+            _preview.boss_type_list = boss_type_list;
+            _handled = true;
+        }
+
+        if (_handled) {
+            global.pointer_input.consumed = true;
+        }
 }
 
 // 选卡区快捷键：光标悬停在卡池卡片上时按「卡槽 N」，直接把这张卡放进第 N 槽

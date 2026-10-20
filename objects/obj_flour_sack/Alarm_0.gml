@@ -37,22 +37,13 @@ with (obj_enemy_parent) {
 	        //effect_create_above(ef_explosion, x, y, 1, c_yellow);
 	    }
 	}
-
-	// 播放倭瓜攻击效果
-	//effect_create_above(ef_explosion, x, y, 2, c_white);
-
-	// 播放攻击声音
-	global.audio.play(snd_flour_sack, 0, false);
-}
-else{
-	alarm[0] = 1
 }
 
 // 播放倭瓜攻击效果
 //effect_create_above(ef_explosion, x, y, 2, c_white);
 
 // 下砸只结算和播放一次，随后保留压扁模型约 41 tick。
-audio_play_sound(snd_flour_sack, 0, false);
+global.audio.play(snd_flour_sack, 0, false);
 
 alarm[1] = 41
 chspeed = 0
