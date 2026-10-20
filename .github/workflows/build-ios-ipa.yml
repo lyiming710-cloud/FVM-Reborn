@@ -160,9 +160,9 @@ jobs:
 
           # Normalize unsigned IPA metadata to the upstream game version.
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 3.0.0" "$APP/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 30000" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 30001" "$APP/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "3.0.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "30000"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "30001"
 
           IPA_DIR="$RUNNER_TEMP/ipa"
           rm -rf "$IPA_DIR"
