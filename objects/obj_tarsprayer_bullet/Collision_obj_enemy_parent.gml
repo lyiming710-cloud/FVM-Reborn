@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if ds_list_find_index(hitted_enemy,other.id) == -1 && !disabled{
 
 	if other.hp > 0 and row == other.grid_row  and can_hit(target_type,other.target_type){

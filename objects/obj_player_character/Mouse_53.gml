@@ -3,7 +3,7 @@ if not is_placed{
 	var logical_y = mouse_y;
 	var platform_shift_x = 0;
 	var platform_shift_y = 0;
-	var plat = instance_position(mouse_x, mouse_y, obj_platform);
+	var plat = instance_position(_click_x, _click_y, obj_platform);
 	if (plat != noone) {
 		platform_shift_x = plat.visual_x_shift;
 		platform_shift_y = plat.visual_y_shift;
@@ -12,7 +12,8 @@ if not is_placed{
 	}
 
 	var can_plant = (can_place_at_position(logical_x, logical_y, "normal","amphi","none"));
-	if can_plant{
+		if can_plant{
+			if (os_type == os_ios) global.pointer_input.consumed = true;
 		is_placed = true
 		global.is_paused = false
 		var grid_pos = get_grid_position_from_world(logical_x, logical_y)

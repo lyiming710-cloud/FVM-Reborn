@@ -1,7 +1,17 @@
 //step事件
-if global.is_paused{
+var _simulation_skip = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
+if (global.is_paused && !_simulation_skip) {
 	exit
 }
+
+var _input_x = (os_type == os_ios) ? global.pointer_input.x : mouse_x;
+var _input_y = (os_type == os_ios) ? global.pointer_input.y : mouse_y;
+var _input_left_pressed = (os_type == os_ios)
+    ? (global.pointer_input.pressed && !global.pointer_input.consumed)
+    : mouse_check_button_pressed(mb_left);
+var _clicked_tool_slot = _input_left_pressed
+    ? battle_tool_slot_at_point(_input_x, _input_y)
+    : noone;
 
 if card_id != "magic_chicken"{
 	current_cost = cost
@@ -14,31 +24,35 @@ if card_id != "magic_chicken"{
 		}
 	}
 }
-if global.debug{
-	cooldown_timer = cooldown
-}
-if cooldown_timer < cooldown{
-	cooldown_timer ++
-
-
-    // 冷却中状态
-    is_ready = false;
-    cooling_alpha = min(cooling_alpha + 0.05, 0.7); // 淡入冷却效果
-} else {
-    // 冷却完成状态
-    cooling_alpha = max(cooling_alpha - 0.05, 0); // 淡出冷却效果
-    
-    // 检查阳光是否足够
-    if (global.flame >= current_cost) {
-        is_ready = true;
-    } else {
-        is_ready = false;
+// Cooldown/resource readiness follows simulation ticks, not physical FPS.
+if (!_simulation_skip) {
+    if global.debug{
+    	cooldown_timer = cooldown
     }
+    if cooldown_timer < cooldown{
+    	cooldown_timer ++
+    
+    
+        // 冷却中状态
+        is_ready = false;
+        cooling_alpha = min(cooling_alpha + 0.05, 0.7); // 淡入冷却效果
+    } else {
+        // 冷却完成状态
+        cooling_alpha = max(cooling_alpha - 0.05, 0); // 淡出冷却效果
+        
+        // 检查阳光是否足够
+        if (global.flame >= current_cost) {
+            is_ready = true;
+        } else {
+            is_ready = false;
+        }
+    }
+    
+    
 }
-
 // 检测鼠标悬停（用于显示提示）
-var mx = device_mouse_x_to_gui(0);
-var my = device_mouse_y_to_gui(0);
+var mx = _input_x;
+var my = _input_y;
 var is_hovered = point_in_rectangle(mx, my, x-42, y-55, x+42, y+50);
 
 // 控制悬停提示透明度
@@ -48,25 +62,28 @@ if (is_hovered) {
     hover_alpha = 0
 }
 
-// 检测鼠标点击（选中卡槽）
-if (is_ready && mouse_check_button_pressed(mb_left)) {
-    mx = mouse_x;
-    my = mouse_y;
+// 点击已拿起卡片的原卡槽会放回卡片；点击未选中的可用卡槽会拿起。
+if (_input_left_pressed) {
+    mx = _input_x;
+    my = _input_y;
     
     if (point_in_rectangle(mx, my, x-50, y-70, x+50, y+70)) {
-		
-        select_slot()
-        
-        // 创建放置预览对象
-        if (selected_preview == noone) {
-            selected_preview = instance_create_depth(mouse_x, mouse_y, depth-2, obj_card_preview);
-            selected_preview.preview_sprite = card_spr; // 设置预览精灵
-			if place_preview != undefined{
-				selected_preview.preview_sprite = place_preview
-			}
-            selected_preview.parent_slot = id; // 设置父卡槽
-			selected_preview.card_id = card_id
-        }
+		if (os_type == os_ios) global.pointer_input.consumed = true;
+		_input_left_pressed = false;
+
+		if (is_selected) {
+			deselect_slot();
+		}
+		else if (is_ready) {
+	        select_slot();
+	        if (selected_preview == noone) {
+	            selected_preview = instance_create_depth(_input_x, _input_y, depth-2, obj_card_preview);
+	            selected_preview.preview_sprite = card_spr;
+				if (place_preview != undefined) selected_preview.preview_sprite = place_preview;
+	            selected_preview.parent_slot = id;
+				selected_preview.card_id = card_id;
+	        }
+		}
     }
 }
 
@@ -93,36 +110,27 @@ if keyboard_check_pressed(slot_key) && is_ready{
 		        }
 			}
 		}
-		else{
-			is_selected = false;
-	        if (selected_preview != noone && instance_exists(selected_preview)) {
-	            instance_destroy(selected_preview);
-	        }
-	        selected_preview = noone;
-	        global.selected_slot = noone;
-		}
+			else{
+				deselect_slot();
+			}
     }
 
 // 如果当前卡槽被选中，处理放置逻辑
 if (is_selected) {
     // 更新预览位置
     if (selected_preview != noone && instance_exists(selected_preview)) {
-        selected_preview.x = mouse_x;
-        selected_preview.y = mouse_y;
+        selected_preview.x = _input_x;
+        selected_preview.y = _input_y;
     }
     
     // 右键取消选择
-    if (mouse_check_button_pressed(mb_right)) or (keyboard_check_pressed(vk_escape)) {
-        is_selected = false;
-        if (selected_preview != noone && instance_exists(selected_preview)) {
-            instance_destroy(selected_preview);
-        }
-        selected_preview = noone;
-        global.selected_slot = noone;
-    }
+	    if (mouse_check_button_pressed(mb_right)) or (keyboard_check_pressed(vk_escape)) {
+	        deselect_slot();
+	    }
     
     // 左键尝试放置植物
-    if (mouse_check_button_pressed(mb_left)) {
+	    if (_input_left_pressed && _clicked_tool_slot == noone) {
+		if (os_type == os_ios) global.pointer_input.consumed = true;
         // 检查是否在可种植区域
 		
         var card_shape = get_card_info_simple(card_id).shape
@@ -140,15 +148,15 @@ if (is_selected) {
         var platform_shift_y = 0;
         var logical_col = -1;
         var logical_row = -1;
-        var grid_pos_visual = get_grid_position_from_world(mouse_x, mouse_y);
+        var grid_pos_visual = get_grid_position_from_world(_input_x, _input_y);
         var direct_in_platform = false;
 
         with (obj_platform) {
             var is_axis_x = (variable_instance_exists(id, "move_axis") && move_axis == "x");
             var shift_x = is_axis_x ? visual_x_shift : 0;
             var shift_y = (!is_axis_x) ? visual_y_shift : 0;
-            var adj_x = mouse_x - shift_x;
-            var adj_y = mouse_y - shift_y;
+            var adj_x = _input_x - shift_x;
+            var adj_y = _input_y - shift_y;
             var grid_pos_adj = get_grid_position_from_world(adj_x, adj_y);
 
             var c_off = is_axis_x ? current_offset : 0;
@@ -254,14 +262,8 @@ if (is_selected) {
 			else if global.grid_terrains[logical_row][logical_col].type == "water"{
 				global.audio.play(snd_enter_water,0,0)
 			}
-            // 取消选择
-            is_selected = false;
-            if (selected_preview != noone && instance_exists(selected_preview)) {
-                instance_destroy(selected_preview);
-            }
-            selected_preview = noone;
-            global.selected_slot = noone;
-        }
+	            deselect_slot();
+	        }
     }
 }
 

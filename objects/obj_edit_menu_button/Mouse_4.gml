@@ -12,6 +12,10 @@ else if btn_type == "save"{
 	obj_player_info_ui.menu_type = 0
 }
 else if btn_type == "open_save_folder"{
+	if (os_type != os_windows) {
+		show_notice("当前平台暂不支持直接打开存档文件夹", 120)
+		exit
+	}
 	var _target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\saves")
 	var ret = native_open_folder(_target)
 	if (ret != 0) {
@@ -19,6 +23,10 @@ else if btn_type == "open_save_folder"{
 	}
 }
 else if btn_type == "export_save_backup" {
+	if (os_type != os_windows) {
+		show_notice("当前平台暂不支持原生存档导出", 120)
+		exit
+	}
 	var _saves_target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\saves")
 	var ret = native_start_backup(_saves_target)
 	if (ret != 0 && ret != -3) {
@@ -28,6 +36,10 @@ else if btn_type == "export_save_backup" {
 	}
 }
 else if btn_type == "import_save_backup" {
+	if (os_type != os_windows) {
+		show_notice("当前平台暂不支持原生存档导入", 120)
+		exit
+	}
 	var _saves_target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\saves")
 	var _backup_target = global.native_util.get_path_in_local_appdata("\\FVM_Reborn\\backups")
 	var ret = native_restore_backup(_saves_target, _backup_target)

@@ -3,14 +3,16 @@ draw_set_halign(fa_center)
 draw_set_valign(fa_middle)
 draw_set_font(font_yuan)
 draw_text(190,45,global.map_name)
-draw_set_color(c_black)
-draw_text(565,53,global.level_data.name)
-{//绘制可选择的防御卡
-	surface_set_target(slot_surface)
-for(var i = 0 ; i < slot_rows ; i++){
-        for(var j = 0 ; j < slot_cols ; j++){
-            draw_sprite_ext(spr_package_slot_bg, 0, x+42+i*84, y + 48 + 96 * j- y_offset, 0.9, 0.9, 0, c_white, 1)
-        }
+	draw_set_color(c_black)
+	draw_text(565,53,global.level_data.name)
+	readyroom_refresh_card_scroll_metrics()
+	{//绘制可选择的防御卡
+		surface_set_target(slot_surface)
+		draw_clear_alpha(c_black,0)
+	for(var i = 0 ; i < slot_rows ; i++){
+	        for(var j = 0 ; j < card_scroll_row_count ; j++){
+	            draw_sprite_ext(spr_package_slot_bg,0,x+42+i*84,y + 48 + 96 * j- y_offset,0.9,0.9,0,c_white,1)
+	        }
     }
     
     // 绘制所有已注册的植物卡片
@@ -29,7 +31,7 @@ for(var i = 0 ; i < slot_rows ; i++){
         var row = card_index div slot_rows;
         var col = card_index mod slot_rows;
         
-        if (row < slot_rows) {
+	        if (row < card_scroll_row_count) {
             var card_x = x + 42 + col * 84
             var card_y = y + 48 + row * 96 - y_offset;
             
