@@ -58,13 +58,7 @@ jobs:
           workflow=Path(".github/workflows/build-ios-ipa.yml")
           w=workflow.read_text(encoding="utf-8")
           token='          IPA_DIR="$RUNNER_TEMP/ipa"'
-          block='''          # Lock the unsigned IPA's displayed version to upstream v3.0.0.
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 3.0.0" "$APP/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 30000" "$APP/Info.plist"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "3.0.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "30000"
-
-'''
+          block="          # Lock the unsigned IPA's displayed version to upstream v3.0.0.\n          /usr/libexec/PlistBuddy -c \"Set :CFBundleShortVersionString 3.0.0\" \"$APP/Info.plist\"\n          /usr/libexec/PlistBuddy -c \"Set :CFBundleVersion 30000\" \"$APP/Info.plist\"\n          test \"$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' \"$APP/Info.plist\")\" = \"3.0.0\"\n          test \"$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' \"$APP/Info.plist\")\" = \"30000\"\n\n"
           if "Lock the unsigned IPA's displayed version" not in w:
               assert token in w, "IPA packaging insertion point missing"
               w=w.replace(token,block+token,1)
