@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if ds_list_find_index(hitted_enemy,other.id) == -1 && row == other.grid_row{
 	with other{
 		if array_get_index(other.can_mouse_list,mouse_id) != -1 && !can_dropped{

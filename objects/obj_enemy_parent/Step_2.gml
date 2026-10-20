@@ -1,3 +1,7 @@
+if global.is_paused{
+	exit
+}
+
 damage_amount = 0
 damage_type = ""
 

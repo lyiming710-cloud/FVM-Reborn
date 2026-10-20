@@ -1,5 +1,9 @@
 // Inherit the parent event
 
+if (global.is_paused) {
+	exit;
+}
+
 if shield_hp > 0{
 	sprite_index = spr_shy_landlady_mouse_shield
 	attack_anim = 6

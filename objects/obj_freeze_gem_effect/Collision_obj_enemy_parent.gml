@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if ds_list_find_index(hitted_enemy,other.id) == -1 && row == other.grid_row{
 	with other{
 		if frozen_timer < 8*60{

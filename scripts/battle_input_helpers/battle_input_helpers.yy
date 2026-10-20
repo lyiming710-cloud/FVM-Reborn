@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"battle_input_helpers",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"battle_input_helpers",
+  "parent":{
+    "name":"Battle",
+    "path":"folders/脚本/Battle.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

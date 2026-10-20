@@ -37,6 +37,15 @@ boss_count = 0
 map_spr_index = 0
 
 speed_up = false
+// Whether selecting a plant card or shovel temporarily slows battle simulation to 0.1x.
+card_slow_enabled = true
+card_hold_active = false
+
+// Battle rendering/input runs at 120 FPS; gameplay logic is scheduled at
+// 60 ticks/s (1x), 120 ticks/s (2x), or 6 ticks/s (0.1x card slow-time).
+simulation_accumulator = 60
+game_set_speed(120, gamespeed_fps)
+
 time_limit = -1
 timer_pause = false
 

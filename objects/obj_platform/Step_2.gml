@@ -307,19 +307,21 @@ if (id == global._last_platform){
 with (obj_card_parent) {
     if (variable_instance_exists(id, "plant_type")) {
 		
-		// 植物格子坐标跟随真实x,y来，保证游戏中的视觉正确性和敌人索敌的正确性，可能会操作和格子注册不一致的问题，目前感觉问题不大
-		// 植物的格子坐标会注册坐标慢半个单位的节奏
-		var grid_pos = get_grid_position_from_world(x, y)
-        grid_col = grid_pos.col
-        grid_row = grid_pos.row
-		
+        // Keep registration coordinates locked while the platform migrates its grid lists.
+        // Rendering follows the visual position without breaking destruction/upgrade lookups.
+        var grid_pos = get_grid_position_from_world(x, y)
+        if (!(variable_instance_exists(id, "platform_grid_lock") && platform_grid_lock)) {
+            grid_col = grid_pos.col
+            grid_row = grid_pos.row
+        }
+
         var _type = plant_type
         if (object_index == obj_cotton_candy) _type = "lilypad"
 		if (object_index == obj_soda_bubble){
 			if(card_equipped_attire_id(plant_id) != "bubble_maltose")_type = "coffee"
 			else _type = "lilypad"
 		}
-        depth = calculate_plant_depth(grid_col, grid_row, _type)
+        depth = calculate_plant_depth(grid_pos.col, grid_pos.row, _type)
     }
 }
 
@@ -327,7 +329,7 @@ var weapons = [obj_bubble_gun,obj_cat_gun,obj_double_water_gun,obj_enhanced_howi
 for(var i=0;i<array_length(weapons);i++){
 with (weapons[i]) {
     if (variable_instance_exists(id, "parent_player")&&instance_exists(parent_player)) {
-        depth = calculate_plant_depth(parent_player.grid_col, parent_player.grid_row, "normal")-1
+        depth = parent_player.depth - 1
     }
 }
 }

@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if !bounced && col == other.grid_col{
 	move_speed *= -1
 	damage += other.atk
