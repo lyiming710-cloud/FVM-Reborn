@@ -1,6 +1,11 @@
 if not is_placed{
-	var logical_x = mouse_x;
-	var logical_y = mouse_y;
+    // Device-only taps need the coordinates sampled by the persistent iOS pointer controller.
+    var _click_x = (os_type == os_ios && variable_global_exists("pointer_input") && global.pointer_input.device_only)
+        ? global.pointer_input.x : mouse_x;
+    var _click_y = (os_type == os_ios && variable_global_exists("pointer_input") && global.pointer_input.device_only)
+        ? global.pointer_input.y : mouse_y;
+    var logical_x = _click_x;
+    var logical_y = _click_y;
 	var platform_shift_x = 0;
 	var platform_shift_y = 0;
 	var plat = instance_position(_click_x, _click_y, obj_platform);

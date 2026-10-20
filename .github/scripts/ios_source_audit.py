@@ -1,0 +1,88 @@
+#!/usr/bin/env python3
+"""Static regression gates for the iOS/GameMaker port. Does not replace a device smoke test."""
+from pathlib import Path
+import re
+import sys
+
+root = Path(__file__).resolve().parents[2]
+errors = []
+
+
+def load(rel):
+    p = root / rel
+    if not p.is_file():
+        errors.append(f"missing file: {rel}")
+        return ""
+    return p.read_text(encoding="utf-8-sig")
+
+
+def expect(cond, detail):
+    if not cond:
+        errors.append(detail)
+
+
+notice = load("objects/obj_notice_controller/Create_0.gml")
+notice_step = load("objects/obj_notice_controller/Step_1.gml")
+for token in ("ios_prev_down =", "ios_last_focus =", "ios_virtual_esc_held =",
+              "global.pointer_input =", "global.battle_skip_frame =",
+              "global.battle_simulation_tick =", "global.battle_keep_paused_after_skip =",
+              "ios_clickable_objects ="):
+    expect(token in notice, f"persistent iOS controller missing initialization: {token}")
+expect("instance_number(obj_notice_controller) > 1" in notice,
+       "missing upstream single-instance guard")
+expect("global.pointer_input.pressed" in notice_step,
+       "persistent pointer sampling removed")
+
+file_manager = load("objects/obj_file_manager/Step_0.gml")
+expect(file_manager.count("ime_tick++") == 1,
+       "Windows IME heartbeat duplicated or missing")
+expect("if (os_type == os_windows) {" in file_manager,
+       "Windows-only IME and native mouse hook are not scoped")
+expect(file_manager.rfind("if (os_type == os_windows) {") <
+       file_manager.find("native_start_mouse_limit"),
+       "Windows native mouse hook outside platform scope")
+
+other = load("objects/obj_file_manager/Other_3.gml")
+expect(re.search(r"if\s*\(\s*os_type\s*==\s*os_windows\s*&&\s*native_stop_mouse_limit", other) is not None,
+       "Windows-only native hook may run on iOS during exit")
+
+player = load("objects/obj_player_character/Mouse_53.gml")
+for token in ("var _click_x =", "var _click_y =", "instance_position(_click_x, _click_y"):
+    expect(token in player, f"player placement pointer value missing: {token}")
+expect(player.index("var _click_y =") < player.index("instance_position(_click_x, _click_y"),
+       "player placement coordinates are read before declaration")
+
+ios = load("options/ios/options_ios.yy")
+workflow = load(".github/workflows/build-ios-ipa.yml")
+init = load("objects/obj_game_init/Create_0.gml")
+expect('"option_ios_version":"3.0.0"' in ios, "iOS version must match upstream 3.0.0")
+expect('"option_ios_build_number":30003' in ios, "iOS hotfix build must be 30003")
+expect('global.game_version = "3.0.0"' in init, "game version out of sync")
+expect('Set :CFBundleVersion 30003' in workflow, "IPA Info.plist build number out of sync")
+expect('Set :CFBundleShortVersionString 3.0.0' in workflow, "IPA Info.plist game version out of sync")
+
+# Check potentially merge-damaged leading-underscore local variables. Only
+# inspect selected iOS/merge paths, because GML's object-scope fields and
+# cross-event instance state cannot be fully inferred by a lexical scanner.
+target_paths = ["objects/obj_readyroom_manager/Step_0.gml","objects/obj_card_slot/Step_0.gml","objects/obj_notice_controller/Step_1.gml","objects/obj_battle_pause_manager/Step_2.gml","objects/obj_readyroom_manager/Create_0.gml","scripts/battle_input_helpers/battle_input_helpers.gml","objects/obj_quit_confirm/Step_0.gml","objects/obj_package_bg/Step_0.gml","objects/obj_battle_pause_manager/Draw_64.gml","objects/obj_cookbook_bg/Step_0.gml","objects/obj_file_manager/Step_0.gml","objects/obj_flour_sack/Alarm_0.gml","objects/obj_pause_menu/Step_0.gml","objects/obj_notice_controller/Create_0.gml","objects/obj_shovel_slot/Step_0.gml","objects/obj_coin/Step_0.gml","objects/obj_restart_confirm/Step_0.gml","objects/obj_package_bg/Draw_73.gml","objects/obj_battle/Step_0.gml","objects/obj_notice_controller/Draw_64.gml","objects/obj_card_slot/Create_0.gml","objects/obj_craft_bg/Draw_73.gml","objects/obj_platform/Step_2.gml","objects/obj_readyroom_manager/Draw_0.gml","scripts/select_shovel/select_shovel.gml","objects/obj_card_preview/Step_0.gml","objects/obj_cookbook_bg/Create_0.gml","objects/obj_edit_menu_button/Mouse_4.gml","objects/obj_game_init/Create_0.gml","objects/obj_battle/CleanUp_0.gml","objects/obj_battle/Create_0.gml","objects/obj_flour_sack/Step_0.gml","scripts/deselect_shovel/deselect_shovel.gml","objects/obj_level_preview/Step_0.gml","objects/obj_package_bg/Create_0.gml","objects/obj_battle_music_controller/Step_0.gml","objects/obj_craft_bg/Create_0.gml","objects/LaboratoryGUI/Create_0.gml","objects/obj_flour_sack/Alarm_1.gml","objects/obj_battle_pause_manager/Create_0.gml","objects/obj_player_character/Mouse_53.gml"]
+for rel in target_paths:
+    source = load(rel)
+    masked = re.sub(r'//[^\n]*|/\*[\s\S]*?\*/', '', source)
+    masked = re.sub(r'"(?:\\.|[^"\\])*"|' + r"'(?:\\.|[^'\\])*'", '""', masked)
+    defined = set(re.findall(r'\b(?:var|let|const)\s+(_[A-Za-z]\w*)', masked))
+    for match in re.finditer(r'\bfunction\s+[A-Za-z_]\w*\s*\(([^)]*)\)', masked):
+        defined.update(p.strip() for p in match.group(1).split(','))
+    used = set(re.findall(r'\b_[A-Za-z]\w*\b', masked))
+    missing = sorted(name for name in used
+                     if name not in defined
+                     and f"function {name}" not in masked
+                     and f".{name}" not in masked)
+    if missing:
+        errors.append(f"{rel}: possibly undeclared local(s): {', '.join(missing)}")
+
+if errors:
+    print("iOS source audit FAILED:")
+    for problem in errors:
+        print("  -", problem)
+    sys.exit(1)
+print(f"iOS source audit PASS: initialization, platform isolation, 3.0.0/30003, {len(target_paths)} event scripts")

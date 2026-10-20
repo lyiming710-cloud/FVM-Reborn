@@ -7,6 +7,7 @@ on:
       - main
     paths:
       - ".github/workflows/build-ios-ipa.yml"
+      - ".github/scripts/ios_source_audit.py"
       - "FVM-reborn.yyp"
       - "objects/**"
       - "scripts/**"
@@ -40,6 +41,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Audit iOS startup, native API guards and pointer variables
+        shell: bash
+        run: python3 .github/scripts/ios_source_audit.py
 
       - name: Verify GameMaker access key
         shell: bash
@@ -160,9 +165,9 @@ jobs:
 
           # Normalize unsigned IPA metadata to the upstream game version.
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 3.0.0" "$APP/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 30002" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 30003" "$APP/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "3.0.0"
-          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "30002"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "30003"
 
           IPA_DIR="$RUNNER_TEMP/ipa"
           rm -rf "$IPA_DIR"
