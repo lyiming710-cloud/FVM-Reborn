@@ -3,6 +3,8 @@ name: Build latest unsigned iOS IPA
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     paths:
       - ".github/workflows/build-ios-ipa.yml"
       - "FVM-reborn.yyp"
@@ -156,6 +158,12 @@ jobs:
           find "$APP" -type d -name '*.xctest' -prune -exec rm -rf {} +
           find "$APP" -type f -iname '*.dll' -delete
 
+          # Normalize unsigned IPA metadata to the upstream game version.
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 3.0.0" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 30000" "$APP/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "3.0.0"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "30000"
+
           IPA_DIR="$RUNNER_TEMP/ipa"
           rm -rf "$IPA_DIR"
           mkdir -p "$IPA_DIR/Payload"
@@ -171,9 +179,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          RELEASE_TAG="ios-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          TITLE="FVM-Reborn unsigned iOS build #${GITHUB_RUN_NUMBER}"
-          NOTES="Unsigned iOS build from commit ${GITHUB_SHA}. GitHub Actions run ${GITHUB_RUN_ID}, attempt ${GITHUB_RUN_ATTEMPT}."
+          RELEASE_TAG="ios-v3.0.0-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          TITLE="FVM-Reborn v3.0.0 unsigned iOS build #${GITHUB_RUN_NUMBER}"
+          NOTES="Unsigned iOS v3.0.0 build from commit ${GITHUB_SHA}. GitHub Actions run ${GITHUB_RUN_ID}, attempt ${GITHUB_RUN_ATTEMPT}."
 
           # Every successful build receives a new immutable tag and Release.
           # This avoids all dependency on the old rolling ios-current tag.
