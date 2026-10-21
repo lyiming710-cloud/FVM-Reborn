@@ -55,11 +55,11 @@ expect(player.index("var _click_y =") < player.index("instance_position(_click_x
 ios = load("options/ios/options_ios.yy")
 workflow = load(".github/workflows/build-ios-ipa.yml")
 init = load("objects/obj_game_init/Create_0.gml")
-expect('"option_ios_version":"3.0.0"' in ios, "iOS version must match upstream 3.0.0")
-expect('"option_ios_build_number":30003' in ios, "iOS hotfix build must be 30003")
-expect('global.game_version = "3.0.0"' in init, "game version out of sync")
-expect('Set :CFBundleVersion 30003' in workflow, "IPA Info.plist build number out of sync")
-expect('Set :CFBundleShortVersionString 3.0.0' in workflow, "IPA Info.plist game version out of sync")
+expect('"option_ios_version":"3.0.1"' in ios, "iOS version must match upstream 3.0.1")
+expect('"option_ios_build_number":30100' in ios, "iOS hotfix build must be 30100")
+expect('global.game_version = "3.0.1"' in init, "game version out of sync")
+expect('Set :CFBundleVersion 30100' in workflow, "IPA Info.plist build number out of sync")
+expect('Set :CFBundleShortVersionString 3.0.1' in workflow, "IPA Info.plist game version out of sync")
 
 # Check potentially merge-damaged leading-underscore local variables. Only
 # inspect selected iOS/merge paths, because GML's object-scope fields and
@@ -80,9 +80,19 @@ for rel in target_paths:
     if missing:
         errors.append(f"{rel}: possibly undeclared local(s): {', '.join(missing)}")
 
+# Check 3.0.1 additions before GameMaker exports an iOS app.
+for icon in ("spr_mermaid_mary_icon", "spr_machine_shark_icon", "spr_lobster_knight_icon", "spr_electric_jellyfish_icon", "spr_travel_record_icon"):
+    expect((root / "sprites" / icon / (icon + ".yy")).is_file(), f"missing v3.0.1 boss icon: {icon}")
+bosses = load("scripts/boss_init/boss_init.gml")
+expect("spr_mermaid_mary_icon" in bosses and "spr_machine_shark_icon" in bosses, "upstream v3.0.1 boss icon registrations missing")
+recipes = load("scripts/cookbook_init/cookbook_init.gml")
+expect('"camp_stew"' in recipes, "upstream v3.0.1 unique camp stew recipe ID missing")
+shop = load("objects/obj_camp_shop_bg/Create_0.gml")
+expect(".max_shape >= " in shop, "upstream v3.0.1 purchased career guard missing")
+
 if errors:
     print("iOS source audit FAILED:")
     for problem in errors:
         print("  -", problem)
     sys.exit(1)
-print(f"iOS source audit PASS: initialization, platform isolation, 3.0.0/30003, {len(target_paths)} event scripts")
+print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30100, {len(target_paths)} event scripts")
