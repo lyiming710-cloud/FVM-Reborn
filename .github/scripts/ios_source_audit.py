@@ -56,9 +56,9 @@ ios = load("options/ios/options_ios.yy")
 workflow = load(".github/workflows/build-ios-ipa.yml")
 init = load("objects/obj_game_init/Create_0.gml")
 expect('"option_ios_version":"3.0.1"' in ios, "iOS version must match upstream 3.0.1")
-expect('"option_ios_build_number":30100' in ios, "iOS hotfix build must be 30100")
+expect('"option_ios_build_number":30101' in ios, "iOS hotfix build must be 30101")
 expect('global.game_version = "3.0.1"' in init, "game version out of sync")
-expect('Set :CFBundleVersion 30100' in workflow, "IPA Info.plist build number out of sync")
+expect('Set :CFBundleVersion 30101' in workflow, "IPA Info.plist build number out of sync")
 expect('Set :CFBundleShortVersionString 3.0.1' in workflow, "IPA Info.plist game version out of sync")
 
 # Check potentially merge-damaged leading-underscore local variables. Only
@@ -90,9 +90,41 @@ expect('"camp_stew"' in recipes, "upstream v3.0.1 unique camp stew recipe ID mis
 shop = load("objects/obj_camp_shop_bg/Create_0.gml")
 expect(".max_shape >= " in shop, "upstream v3.0.1 purchased career guard missing")
 
+# Non-destructive fallback for invalid and legacy-format save files.
+loader = load("scripts/load_file/load_file.gml")
+saver = load("scripts/save_file/save_file.gml")
+startup = load("objects/obj_game_init/Other_2.gml")
+expect("function load_file_read_only_fallback(" in loader, "missing save load fallback")
+expect("reset_file(file_slot, false)" in loader, "recovery must initialize in memory only")
+expect("function reset_file(file_slot, write_to_disk = true)" in loader,
+       "save initializer must have non-persisting mode")
+expect("if (write_to_disk) save_file(file_slot);" in loader, "save initializer writes unconditionally")
+expect("legacy format needs manual recovery" in loader, "legacy saves may be erased on startup")
+expect("global.save_read_only_slot = file_slot;\n        global.save_data = _loaded;" in loader,
+       "save writes must be blocked until migration and validation finish")
+expect("save schema is incomplete" in loader and "save fields have invalid types" in loader,
+       "loaded save schema must be checked")
+expect("global.save_read_only_slot == file_slot" in saver and
+       saver.index("global.save_read_only_slot == file_slot") < saver.index("file_text_open_write(file_path)"),
+       "read-only save lock is not enforced before opening original file")
+expect("var _save_loaded = load_file(global.save_slot)" in startup,
+       "startup does not handle recovery mode")
+
+# The v3.0.1 upstream camp-night hard level had one trailing NUL.
+import json
+level = root / "datafiles/level_data/camp/nut_platform_night_hard.json"
+try:
+    raw = level.read_bytes()
+    expect(b"\x00" not in raw, "camp night hard level contains NUL")
+    decoded = json.loads(raw)
+    expect(isinstance(decoded, dict) and isinstance(decoded.get("map"), list)
+           and len(decoded["map"]) > 0, "camp night hard level grid missing")
+except (ValueError, OSError, UnicodeError) as exc:
+    errors.append("camp night hard JSON invalid: " + str(exc))
+
 if errors:
     print("iOS source audit FAILED:")
     for problem in errors:
         print("  -", problem)
     sys.exit(1)
-print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30100, {len(target_paths)} event scripts")
+print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30101, {len(target_paths)} event scripts")

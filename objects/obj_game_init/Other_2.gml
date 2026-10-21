@@ -33,7 +33,12 @@ global.player_name = "Player";
 global.total_time = 0
 global.player_sprite = noone;
 
-load_file(global.save_slot)
+// load_file() initializes a read-only in-memory fallback on recoverable errors.
+// Never continue into the menu with undefined global.save_data.
+var _save_loaded = load_file(global.save_slot);
+if (!_save_loaded) {
+    show_debug_message("Started in safe read-only mode; original save left unchanged.");
+}
 //reset_file(global.save_slot)
 
 

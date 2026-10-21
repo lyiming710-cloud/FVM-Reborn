@@ -2,6 +2,12 @@
 /// @desc 将全局变量global.save_data保存到存档文件中
 /// @param {real} file_slot 存档槽位
 function save_file(file_slot) {
+    // A damaged original save must never be truncated by recovery gameplay.
+    if (variable_global_exists("save_read_only") && global.save_read_only &&
+        global.save_read_only_slot == file_slot) {
+        show_debug_message("Refusing to overwrite protected save: " + string(file_slot));
+        return false;
+    }
 	var file_path = "saves/"+"save" + string(file_slot) + ".json"
     // 将数据转换为JSON字符串
     var json_string = json_stringify(global.save_data);
