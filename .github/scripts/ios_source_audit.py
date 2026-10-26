@@ -56,9 +56,9 @@ ios = load("options/ios/options_ios.yy")
 workflow = load(".github/workflows/build-ios-ipa.yml")
 init = load("objects/obj_game_init/Create_0.gml")
 expect('"option_ios_version":"3.0.1"' in ios, "iOS version must match upstream 3.0.1")
-expect('"option_ios_build_number":30102' in ios, "iOS hotfix build must be 30102")
+expect('"option_ios_build_number":30103' in ios, "iOS hotfix build must be 30103")
 expect('global.game_version = "3.0.1"' in init, "game version out of sync")
-expect('Set :CFBundleVersion 30102' in workflow, "IPA Info.plist build number out of sync")
+expect('Set :CFBundleVersion 30103' in workflow, "IPA Info.plist build number out of sync")
 expect('Set :CFBundleShortVersionString 3.0.1' in workflow, "IPA Info.plist game version out of sync")
 
 # Check potentially merge-damaged leading-underscore local variables. Only
@@ -164,9 +164,30 @@ expect("cookbook_scrollbar_dragging" in cookbook_step,
 expect("panel_anim_end_slide(id, 260)" in cookbook_render,
        "cookbook panel slide compositor unexpectedly removed")
 
+# Ready-room upstream scrollbar must share limits and coordinates with iPad touch.
+ready_draw = load("objects/obj_readyroom_manager/Draw_0.gml")
+ready_step = load("objects/obj_readyroom_manager/Step_0.gml")
+ready_create = load("objects/obj_readyroom_manager/Create_0.gml")
+expect(ready_draw.count("draw_sprite_ext(spr_info_island_scroll_bar") == 1,
+       "ready-room duplicate native scrollbar draw")
+expect("card_scrollbar_x, card_scrollbar_thumb_y" in ready_draw,
+       "ready-room native scrollbar and touch hitbox coordinates diverge")
+expect("var _sb_max = 96 * slot_rows - 515" not in ready_draw,
+       "ready-room upstream scrollbar limit conflicts with iPad content scroll")
+expect("y_offset_target = y_offset" in ready_step and
+       "y_offset_target = y_offset" in ready_draw,
+       "dragging does not update shared scroll target")
+expect("sprite_get_height(spr_info_island_scroll_bar) * 2.2" in ready_create,
+       "ready-room touch thumb height differs from visible upstream sprite")
+for path in ("objects/obj_readyroom_manager/Mouse_60.gml",
+             "objects/obj_readyroom_manager/Mouse_61.gml"):
+    wheel = load(path)
+    expect("card_scroll_max" in wheel and "readyroom_refresh_card_scroll_metrics()" in wheel,
+           f"ready-room mouse wheel limit not synchronized: {path}")
+
 if errors:
     print("iOS source audit FAILED:")
     for problem in errors:
         print("  -", problem)
     sys.exit(1)
-print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30102, {len(target_paths)} event scripts")
+print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30103, {len(target_paths)} event scripts")

@@ -79,7 +79,7 @@ function readyroom_refresh_card_scroll_metrics(){
 	y_offset = clamp(y_offset,0,card_scroll_max)
 
 	if card_scroll_max > 0{
-		card_scrollbar_thumb_h = max(56,card_scroll_view_height * card_scroll_view_height / card_scroll_content_height)
+		card_scrollbar_thumb_h = sprite_get_height(spr_info_island_scroll_bar) * 2.2
 		card_scrollbar_thumb_y = card_scroll_view_top
 			+ (y_offset / card_scroll_max) * (card_scroll_view_height - card_scrollbar_thumb_h)
 	}

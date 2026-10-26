@@ -99,6 +99,7 @@ else{
 		if _thumb_travel > 0{
 			y_offset = ((_thumb_top - card_scroll_view_top) / _thumb_travel) * card_scroll_max
 		}
+		y_offset_target = y_offset
 		if os_type == os_ios global.pointer_input.consumed = true
 	}
 
@@ -107,6 +108,7 @@ else{
 		if abs(_drag_delta) >= card_scroll_threshold card_scroll_moved = true
 		if card_scroll_moved{
 			y_offset = clamp(card_scroll_start_offset - _drag_delta,0,card_scroll_max)
+				y_offset_target = y_offset
 		}
 		if os_type == os_ios global.pointer_input.consumed = true
 	}
