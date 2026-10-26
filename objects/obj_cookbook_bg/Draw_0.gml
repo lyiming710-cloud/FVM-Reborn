@@ -67,4 +67,33 @@ else{
 	}
 }
 
+// iPad cookbook touch scrollbar: draw INSIDE panel_anim_begin/end_slide.
+// Input handling lives in Step_0; without this render pass the thumb was invisible.
+if (os_type == os_ios && button_select >= 0) {
+    var _list_n = array_length(current_cookbook_list);
+    var _max_page = max(0, _list_n - 6);
+    if (_max_page > 0) {
+        var _top = cookbook_scrollbar_top;
+        var _bottom = cookbook_scrollbar_bottom;
+        var _left = cookbook_scrollbar_x;
+        var _right = _left + cookbook_scrollbar_width;
+        var _track = _bottom - _top;
+        var _thumb = max(64, _track * min(1, 6 / _list_n));
+        var _travel = max(1, _track - _thumb);
+        var _thumb_y = _top + clamp(y_offset / _max_page, 0, 1) * _travel;
+
+        draw_set_alpha(0.8);
+        draw_set_colour(c_black);
+        draw_roundrect(_left, _top, _right, _bottom, false);
+        draw_set_alpha(1);
+        draw_set_colour(c_white);
+        draw_roundrect(_left, _top, _right, _bottom, true);
+        draw_set_colour(c_yellow);
+        draw_roundrect(_left, _thumb_y, _right, _thumb_y + _thumb, false);
+        draw_set_colour(c_white);
+        draw_roundrect(_left, _thumb_y, _right, _thumb_y + _thumb, true);
+        draw_set_alpha(1);
+    }
+}
+
 panel_anim_end_slide(id, 260)   // 整块从下方滑入 + 淡入

@@ -56,9 +56,9 @@ ios = load("options/ios/options_ios.yy")
 workflow = load(".github/workflows/build-ios-ipa.yml")
 init = load("objects/obj_game_init/Create_0.gml")
 expect('"option_ios_version":"3.0.1"' in ios, "iOS version must match upstream 3.0.1")
-expect('"option_ios_build_number":30101' in ios, "iOS hotfix build must be 30101")
+expect('"option_ios_build_number":30102' in ios, "iOS hotfix build must be 30102")
 expect('global.game_version = "3.0.1"' in init, "game version out of sync")
-expect('Set :CFBundleVersion 30101' in workflow, "IPA Info.plist build number out of sync")
+expect('Set :CFBundleVersion 30102' in workflow, "IPA Info.plist build number out of sync")
 expect('Set :CFBundleShortVersionString 3.0.1' in workflow, "IPA Info.plist game version out of sync")
 
 # Check potentially merge-damaged leading-underscore local variables. Only
@@ -122,9 +122,51 @@ try:
 except (ValueError, OSError, UnicodeError) as exc:
     errors.append("camp night hard JSON invalid: " + str(exc))
 
+# UI synchronization regressions: do not draw a second scrollbar when
+# upstream already owns backpack/craft scrolling.
+package_draw = load("objects/obj_package_bg/Draw_0.gml")
+craft_draw = load("objects/obj_craft_bg/Draw_0.gml")
+for screen, code in (("backpack", package_draw), ("craft", craft_draw)):
+    expect("spr_info_island_scroll_bar" in code,
+           f"missing upstream-native {screen} scrollbar")
+for rel in ("objects/obj_package_bg/Step_0.gml",
+            "objects/obj_package_bg/Draw_73.gml",
+            "objects/obj_craft_bg/Draw_73.gml",
+            "objects/obj_battle_pause_manager/Draw_64.gml"):
+    expect(not (root / rel).exists(), f"duplicate or shadowed UI event remains: {rel}")
+package_create = load("objects/obj_package_bg/Create_0.gml")
+craft_create = load("objects/obj_craft_bg/Create_0.gml")
+expect("package_scrollbar_dragging" not in package_create, "backpack duplicate scrollbar state")
+expect("craft_scrollbar_dragging" not in craft_create, "craft duplicate scrollbar state")
+for rel, event_type, event_num, should_exist in (
+    ("objects/obj_package_bg/obj_package_bg.yy", 3, 0, False),
+    ("objects/obj_package_bg/obj_package_bg.yy", 8, 73, False),
+    ("objects/obj_craft_bg/obj_craft_bg.yy", 8, 73, False),
+    ("objects/obj_notice_controller/obj_notice_controller.yy", 8, 64, True),
+    ("objects/obj_battle_pause_manager/obj_battle_pause_manager.yy", 8, 64, False),
+):
+    source = load(rel)
+    event = f'"eventNum":{event_num},"eventType":{event_type},'
+    expect((event in source) == should_exist,
+           f"unexpected event registration {rel}: {event}")
+gui = load("objects/obj_notice_controller/Draw_64.gml")
+expect("instance_exists(obj_battle)" in gui and
+       '"ESC"' in gui and '"暂停"' in gui and '"缓时 开"' in gui,
+       "persistent GUI renderer must contain ESC/pause/speed/slow controls")
+cookbook_render = load("objects/obj_cookbook_bg/Draw_0.gml")
+cookbook_step = load("objects/obj_cookbook_bg/Step_0.gml")
+expect("cookbook_scrollbar_x" in cookbook_render and
+       cookbook_render.index("cookbook_scrollbar_x") <
+       cookbook_render.index("panel_anim_end_slide(id, 260)"),
+       "cookbook scrollbar missing from animated draw pass")
+expect("cookbook_scrollbar_dragging" in cookbook_step,
+       "cookbook touch scrolling unexpectedly removed")
+expect("panel_anim_end_slide(id, 260)" in cookbook_render,
+       "cookbook panel slide compositor unexpectedly removed")
+
 if errors:
     print("iOS source audit FAILED:")
     for problem in errors:
         print("  -", problem)
     sys.exit(1)
-print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30101, {len(target_paths)} event scripts")
+print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30102, {len(target_paths)} event scripts")
