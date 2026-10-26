@@ -56,15 +56,53 @@ ios = load("options/ios/options_ios.yy")
 workflow = load(".github/workflows/build-ios-ipa.yml")
 init = load("objects/obj_game_init/Create_0.gml")
 expect('"option_ios_version":"3.0.1"' in ios, "iOS version must match upstream 3.0.1")
-expect('"option_ios_build_number":30103' in ios, "iOS hotfix build must be 30103")
+expect('"option_ios_build_number":30104' in ios, "iOS hotfix build must be 30104")
 expect('global.game_version = "3.0.1"' in init, "game version out of sync")
-expect('Set :CFBundleVersion 30103' in workflow, "IPA Info.plist build number out of sync")
+expect('Set :CFBundleVersion 30104' in workflow, "IPA Info.plist build number out of sync")
 expect('Set :CFBundleShortVersionString 3.0.1' in workflow, "IPA Info.plist game version out of sync")
 
 # Check potentially merge-damaged leading-underscore local variables. Only
 # inspect selected iOS/merge paths, because GML's object-scope fields and
 # cross-event instance state cannot be fully inferred by a lexical scanner.
-target_paths = ["objects/obj_readyroom_manager/Step_0.gml","objects/obj_card_slot/Step_0.gml","objects/obj_notice_controller/Step_1.gml","objects/obj_battle_pause_manager/Step_2.gml","objects/obj_readyroom_manager/Create_0.gml","scripts/battle_input_helpers/battle_input_helpers.gml","objects/obj_quit_confirm/Step_0.gml","objects/obj_package_bg/Step_0.gml","objects/obj_battle_pause_manager/Draw_64.gml","objects/obj_cookbook_bg/Step_0.gml","objects/obj_file_manager/Step_0.gml","objects/obj_flour_sack/Alarm_0.gml","objects/obj_pause_menu/Step_0.gml","objects/obj_notice_controller/Create_0.gml","objects/obj_shovel_slot/Step_0.gml","objects/obj_coin/Step_0.gml","objects/obj_restart_confirm/Step_0.gml","objects/obj_package_bg/Draw_73.gml","objects/obj_battle/Step_0.gml","objects/obj_notice_controller/Draw_64.gml","objects/obj_card_slot/Create_0.gml","objects/obj_craft_bg/Draw_73.gml","objects/obj_platform/Step_2.gml","objects/obj_readyroom_manager/Draw_0.gml","scripts/select_shovel/select_shovel.gml","objects/obj_card_preview/Step_0.gml","objects/obj_cookbook_bg/Create_0.gml","objects/obj_edit_menu_button/Mouse_4.gml","objects/obj_game_init/Create_0.gml","objects/obj_battle/CleanUp_0.gml","objects/obj_battle/Create_0.gml","objects/obj_flour_sack/Step_0.gml","scripts/deselect_shovel/deselect_shovel.gml","objects/obj_level_preview/Step_0.gml","objects/obj_package_bg/Create_0.gml","objects/obj_battle_music_controller/Step_0.gml","objects/obj_craft_bg/Create_0.gml","objects/LaboratoryGUI/Create_0.gml","objects/obj_flour_sack/Alarm_1.gml","objects/obj_battle_pause_manager/Create_0.gml","objects/obj_player_character/Mouse_53.gml"]
+target_paths = [
+    "objects/obj_readyroom_manager/Step_0.gml",
+    "objects/obj_card_slot/Step_0.gml",
+    "objects/obj_notice_controller/Step_1.gml",
+    "objects/obj_battle_pause_manager/Step_2.gml",
+    "objects/obj_readyroom_manager/Create_0.gml",
+    "scripts/battle_input_helpers/battle_input_helpers.gml",
+    "objects/obj_quit_confirm/Step_0.gml",
+    "objects/obj_cookbook_bg/Step_0.gml",
+    "objects/obj_file_manager/Step_0.gml",
+    "objects/obj_flour_sack/Alarm_0.gml",
+    "objects/obj_pause_menu/Step_0.gml",
+    "objects/obj_notice_controller/Create_0.gml",
+    "objects/obj_shovel_slot/Step_0.gml",
+    "objects/obj_coin/Step_0.gml",
+    "objects/obj_restart_confirm/Step_0.gml",
+    "objects/obj_battle/Step_0.gml",
+    "objects/obj_notice_controller/Draw_64.gml",
+    "objects/obj_card_slot/Create_0.gml",
+    "objects/obj_platform/Step_2.gml",
+    "objects/obj_readyroom_manager/Draw_0.gml",
+    "scripts/select_shovel/select_shovel.gml",
+    "objects/obj_card_preview/Step_0.gml",
+    "objects/obj_cookbook_bg/Create_0.gml",
+    "objects/obj_edit_menu_button/Mouse_4.gml",
+    "objects/obj_game_init/Create_0.gml",
+    "objects/obj_battle/CleanUp_0.gml",
+    "objects/obj_battle/Create_0.gml",
+    "objects/obj_flour_sack/Step_0.gml",
+    "scripts/deselect_shovel/deselect_shovel.gml",
+    "objects/obj_level_preview/Step_0.gml",
+    "objects/obj_package_bg/Create_0.gml",
+    "objects/obj_battle_music_controller/Step_0.gml",
+    "objects/obj_craft_bg/Create_0.gml",
+    "objects/LaboratoryGUI/Create_0.gml",
+    "objects/obj_flour_sack/Alarm_1.gml",
+    "objects/obj_battle_pause_manager/Create_0.gml",
+    "objects/obj_player_character/Mouse_53.gml",
+]
 for rel in target_paths:
     source = load(rel)
     masked = re.sub(r'//[^\n]*|/\*[\s\S]*?\*/', '', source)
@@ -190,4 +228,4 @@ if errors:
     for problem in errors:
         print("  -", problem)
     sys.exit(1)
-print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30103, {len(target_paths)} event scripts")
+print(f"iOS source audit PASS: initialization, platform isolation, 3.0.1/30104, {len(target_paths)} event scripts")

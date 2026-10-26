@@ -2,7 +2,7 @@
   "$GMiOSOptions":"v1",
   "%Name":"iOS",
   "name":"iOS",
-  "option_ios_build_number":30103,
+  "option_ios_build_number":30104,
   "option_ios_bundle_name":"com.company.game",
   "option_ios_defer_home_indicator":false,
   "option_ios_devices":2,
