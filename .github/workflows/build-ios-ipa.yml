@@ -1,0 +1,318 @@
+name: Build latest unsigned iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_version:
+        description: "Optional app version override (leave blank to auto-detect from obj_game_init)"
+        required: false
+        default: ""
+        type: string
+      build_number:
+        description: "Optional iOS CFBundleVersion override (leave blank to auto-derive)"
+        required: false
+        default: ""
+        type: string
+      runtime_version:
+        description: "GameMaker runtime version (default 2026.0.0.23)"
+        required: false
+        default: "2026.0.0.23"
+        type: string
+      publish_release:
+        description: "Create a versioned GitHub Release in addition to Actions artifact"
+        required: false
+        default: true
+        type: boolean
+  push:
+    branches:
+      - "ios-*"
+      - "main"
+    paths:
+      - ".github/workflows/build-ios-ipa.yml"
+      - ".github/scripts/ios_source_audit.py"
+      - "*.yyp"
+      - "objects/**"
+      - "scripts/**"
+      - "rooms/**"
+      - "options/ios/**"
+      - "sprites/**"
+      - "fonts/**"
+      - "sounds/**"
+      - "shaders/**"
+      - "tilesets/**"
+      - "sequences/**"
+      - "extensions/**"
+      - "datafiles/**"
+      - "**/*.gml"
+      - "**/*.yy"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fvm-ios-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    runs-on: macos-15-intel
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ github.token }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version metadata & prepare iOS texture groups
+        id: meta
+        shell: bash
+        env:
+          INPUT_APP_VERSION: ${{ inputs.app_version }}
+          INPUT_BUILD_NUMBER: ${{ inputs.build_number }}
+          INPUT_RUNTIME_VERSION: ${{ inputs.runtime_version }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          app_version = os.environ.get("INPUT_APP_VERSION", "").strip()
+          if not app_version:
+              init_path = Path("objects/obj_game_init/Create_0.gml")
+              if init_path.is_file():
+                  init_text = init_path.read_text(encoding="utf-8-sig", errors="replace")
+                  m = re.search(r'global\.game_version\s*=\s*"([^"]+)"', init_text)
+                  if m:
+                      app_version = m.group(1).strip()
+          if not app_version:
+              app_version = "0.0.0"
+
+          build_number = os.environ.get("INPUT_BUILD_NUMBER", "").strip()
+          if not build_number:
+              parts = [int(p) for p in re.findall(r"\d+", app_version)[:3]]
+              while len(parts) < 3:
+                  parts.append(0)
+              base_code = parts[0] * 10000 + parts[1] * 100 + parts[2]
+              run_num = int(os.environ.get("RUN_NUMBER", "1") or "1")
+              build_number = str(base_code * 100 + (run_num % 100))
+
+          runtime_version = os.environ.get("INPUT_RUNTIME_VERSION", "").strip() or "2026.0.0.23"
+
+          ios_path = Path("options/ios/options_ios.yy")
+          if ios_path.is_file():
+              ios_text = ios_path.read_text(encoding="utf-8-sig", errors="replace")
+              ios_text = re.sub(
+                  r'("option_ios_version"\s*:\s*")[^"]*(")',
+                  rf'\g<1>{app_version}\g<2>',
+                  ios_text,
+                  count=1,
+              )
+              ios_text = re.sub(
+                  r'("option_ios_build_number"\s*:\s*)\d+',
+                  rf'\g<1>{build_number}',
+                  ios_text,
+                  count=1,
+              )
+              ios_path.write_text(ios_text, encoding="utf-8")
+
+          yyp_files = sorted(Path(".").glob("*.yyp"))
+          if not yyp_files:
+              raise SystemExit("No .yyp project file found at repository root")
+          yyp_path = yyp_files[0]
+          yyp_text = yyp_path.read_text(encoding="utf-8-sig", errors="replace")
+          yyp_patched, replaced = re.subn(
+              r'"compressFormat"\s*:\s*"custom"\s*,\s*"customOptions"\s*:\s*"BCN[^"]*"',
+              '"compressFormat":"bz2","customOptions":""',
+              yyp_text,
+          )
+          if replaced > 0:
+              yyp_path.write_text(yyp_patched, encoding="utf-8")
+              print(f"Patched {replaced} BCN TextureGroups -> bz2 in {yyp_path.name} for iOS compatibility")
+
+          ipa_name = f"FVM-Reborn-v{app_version}-iOS-unsigned.ipa"
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"app_version={app_version}\n")
+              out.write(f"build_number={build_number}\n")
+              out.write(f"runtime_version={runtime_version}\n")
+              out.write(f"yyp={yyp_path.resolve()}\n")
+              out.write(f"ipa_name={ipa_name}\n")
+
+          print(f"Resolved AppVersion={app_version}, BuildNumber={build_number}, Runtime={runtime_version}, YYP={yyp_path.name}")
+          PY
+
+      - name: Audit iOS startup, native API guards and touch HUD
+        shell: bash
+        run: python3 .github/scripts/ios_source_audit.py
+
+      - name: Verify GameMaker access key
+        shell: bash
+        env:
+          ACCESSKEY: ${{ secrets.ACCESSKEY }}
+        run: |
+          if [ -z "$ACCESSKEY" ]; then
+            echo "::error::Missing repository secret ACCESSKEY. Generate a GameMaker Access Key and save it as repository Actions secret ACCESSKEY."
+            exit 1
+          fi
+
+      - name: Setup GameMaker Igor and iOS runtime
+        id: igor
+        uses: bscotch/igor-setup@v3
+        with:
+          target-yyp: ${{ steps.meta.outputs.yyp }}
+          runtime-version: ${{ steps.meta.outputs.runtime_version }}
+          access-key: ${{ secrets.ACCESSKEY }}
+          modules: ios
+          cache: "false"
+
+      - name: Export iOS Xcode project
+        id: gm
+        uses: bscotch/igor-build@v1
+        with:
+          yyp-path: ${{ steps.meta.outputs.yyp }}
+          user-dir: ${{ steps.igor.outputs.user-dir }}
+          platform: ios
+          yyc: "false"
+          save-logs: "true"
+          name: FVM-Reborn.xcodeproj
+
+      - name: Inspect exported Xcode project
+        shell: bash
+        env:
+          OUT_DIR: ${{ steps.gm.outputs.out-dir }}
+        run: |
+          echo "GameMaker output: $OUT_DIR"
+          find "$OUT_DIR" -maxdepth 5 \( -name '*.xcodeproj' -o -name '*.xcworkspace' -o -name 'Podfile' \) -print || true
+          xcodebuild -version
+
+      - name: Build unsigned iOS app
+        id: xcode
+        shell: bash
+        env:
+          OUT_DIR: ${{ steps.gm.outputs.out-dir }}
+          APP_VERSION: ${{ steps.meta.outputs.app_version }}
+          BUILD_NUMBER: ${{ steps.meta.outputs.build_number }}
+          IPA_NAME: ${{ steps.meta.outputs.ipa_name }}
+        run: |
+          set -euo pipefail
+          DERIVED="$RUNNER_TEMP/FVM-DerivedData"
+          rm -rf "$DERIVED"
+
+          WORKSPACE="$(find "$OUT_DIR" -type d -name '*.xcworkspace' ! -path '*/project.xcworkspace' -print -quit || true)"
+          PROJECT="$(find "$OUT_DIR" -type d -name '*.xcodeproj' -print -quit || true)"
+
+          if [ -n "$WORKSPACE" ]; then
+            MODE="-workspace"
+            CONTAINER="$WORKSPACE"
+          elif [ -n "$PROJECT" ]; then
+            MODE="-project"
+            CONTAINER="$PROJECT"
+          else
+            echo "::error::GameMaker export did not contain an Xcode project/workspace"
+            find "$OUT_DIR" -maxdepth 4 -print
+            exit 1
+          fi
+
+          LIST_JSON="$RUNNER_TEMP/xcode-list.json"
+          xcodebuild "$MODE" "$CONTAINER" -list -json > "$LIST_JSON"
+          cat "$LIST_JSON"
+
+          TARGET=""
+          if [ -n "$PROJECT" ]; then
+            PROJECT_LIST_JSON="$RUNNER_TEMP/xcode-project-list.json"
+            xcodebuild -project "$PROJECT" -list -json > "$PROJECT_LIST_JSON"
+            TARGET="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("project") or {}; t=o.get("targets") or []; print(next((x for x in t if "test" not in x.lower()), ""))' "$PROJECT_LIST_JSON")"
+          fi
+
+          if [ -n "$TARGET" ]; then
+            echo "Building application target: $TARGET"
+            xcodebuild -project "$PROJECT" -target "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' SYMROOT="$DERIVED/Build/Products" OBJROOT="$DERIVED/Build/Intermediates.noindex" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_IDENTITY="" DEVELOPMENT_TEAM="" build
+          else
+            SCHEME="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); o=d.get("workspace") or d.get("project") or {}; s=o.get("schemes") or []; print(next((x for x in s if "test" not in x.lower()), ""))' "$LIST_JSON")"
+            if [ -z "$SCHEME" ]; then
+              echo "::error::No application target or scheme found"
+              exit 1
+            fi
+            echo "Building scheme: $SCHEME"
+            xcodebuild "$MODE" "$CONTAINER" -scheme "$SCHEME" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath "$DERIVED" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGNING_IDENTITY="" DEVELOPMENT_TEAM="" build
+          fi
+
+          APP="$(find "$DERIVED/Build/Products" -type d -path '*Release-iphoneos/*.app' -print -quit || true)"
+          if [ -z "$APP" ]; then
+            APP="$(find "$DERIVED/Build/Products" -type d -name '*.app' -print -quit || true)"
+          fi
+
+          if [ -z "$APP" ]; then
+            echo "::error::Xcode build completed but no .app was found"
+            find "$DERIVED/Build/Products" -maxdepth 5 -print || true
+            exit 1
+          fi
+
+          find "$APP" -type d -name '*.xctest' -prune -exec rm -rf {} +
+          find "$APP" -type f -iname '*.dll' -delete
+
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_VERSION}" "$APP/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${BUILD_NUMBER}" "$APP/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Info.plist")" = "${APP_VERSION}"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$APP/Info.plist")" = "${BUILD_NUMBER}"
+
+          IPA_DIR="$RUNNER_TEMP/ipa"
+          rm -rf "$IPA_DIR"
+          mkdir -p "$IPA_DIR/Payload"
+          cp -R "$APP" "$IPA_DIR/Payload/"
+          cd "$IPA_DIR"
+          /usr/bin/zip -qry "$GITHUB_WORKSPACE/${IPA_NAME}" Payload
+          test -s "$GITHUB_WORKSPACE/${IPA_NAME}"
+          ls -lh "$GITHUB_WORKSPACE/${IPA_NAME}"
+          shasum -a 256 "$GITHUB_WORKSPACE/${IPA_NAME}" | tee "$GITHUB_WORKSPACE/${IPA_NAME}.sha256"
+
+      - name: Upload unsigned IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FVM-Reborn-v${{ steps.meta.outputs.app_version }}-iOS-unsigned
+          path: |
+            ${{ steps.meta.outputs.ipa_name }}
+            ${{ steps.meta.outputs.ipa_name }}.sha256
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Publish versioned IPA release
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish_release }}
+        shell: bash
+        env:
+          APP_VERSION: ${{ steps.meta.outputs.app_version }}
+          BUILD_NUMBER: ${{ steps.meta.outputs.build_number }}
+          IPA_NAME: ${{ steps.meta.outputs.ipa_name }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="ios-v${APP_VERSION}-build-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          TITLE="FVM-Reborn v${APP_VERSION} unsigned iOS build #${GITHUB_RUN_NUMBER}"
+          NOTES="Unsigned iOS v${APP_VERSION} (build ${BUILD_NUMBER}) from commit ${GITHUB_SHA}. GitHub Actions run ${GITHUB_RUN_ID}, attempt ${GITHUB_RUN_ATTEMPT}."
+
+          gh release create "$RELEASE_TAG" \
+            "${IPA_NAME}" \
+            "${IPA_NAME}.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$TITLE" \
+            --notes "$NOTES"
+
+          {
+            echo "### iOS release"
+            echo "Tag: \`$RELEASE_TAG\`"
+            echo "Version: \`v${APP_VERSION} (${BUILD_NUMBER})\`"
+            echo "Commit: \`$GITHUB_SHA\`"
+            echo "Release: [https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG](https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload GameMaker build diagnostics on failure
+        if: failure() && steps.gm.outputs.out-dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: FVM-Reborn-iOS-build-diagnostics
+          path: ${{ steps.gm.outputs.out-dir }}
+          if-no-files-found: warn
+          retention-days: 1
