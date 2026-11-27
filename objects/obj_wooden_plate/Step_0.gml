@@ -1,4 +1,9 @@
 // Inherit the parent event
+
+if (global.is_paused) {
+	exit;
+}
+
 event_inherited();
 
 if !is_derivative && shape == 2{
@@ -20,4 +25,3 @@ if !is_derivative && shape == 2{
 	global.replace_placement = current_replace_option
 	is_derivative = true
 }
-

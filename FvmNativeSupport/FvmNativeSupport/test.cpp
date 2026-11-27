@@ -1,4 +1,5 @@
 
+#include <algorithm>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -31,7 +32,7 @@ static auto CheckDirHasSameContent(const std::string& dir1,
       }
       std::istreambuf_iterator<char> begin1(file1), end1;
       std::istreambuf_iterator<char> begin2(file2), end2;
-      if (!std::equal(begin1, end1, begin2)) {
+      if (!std::equal(begin1, end1, begin2, end2)) {
         return false;
       }
     }
@@ -197,8 +198,27 @@ static int RunAllTests() {
   }
   printf("  PASS\n");
 
-  // ── 6. log file ───────────────────────────────────────
-  printf("[Test 6] SetNativeLogFilePath + LogNativeError\n");
+  // ── 6. reject path traversal in imported backups ──────
+  printf("[Test 6] reject unsafe backup file names\n");
+  {
+    fs::path malicious_backup = test_root / "malicious_backup.json";
+    fs::path escaped_file = test_root / "escaped.json";
+    CreateTestFile(
+        malicious_backup,
+        R"({"files":[{"name":"../escaped.json","content":"owned"}]})");
+    if (!TestRestoreBackupWithTargetFile(
+            restore_dir, malicious_backup, "path traversal",
+            static_cast<double>(NativeError::InvalidArgument)))
+      return -1;
+    if (fs::exists(escaped_file)) {
+      printf("  FAIL: restore wrote outside the save directory\n");
+      return -1;
+    }
+  }
+  printf("  PASS\n");
+
+  // ── 7. log file ───────────────────────────────────────
+  printf("[Test 7] SetNativeLogFilePath + LogNativeError\n");
   {
     fs::path log_path = test_root / "native.log";
     double set_result = SetNativeLogFilePath(log_path.string().c_str());

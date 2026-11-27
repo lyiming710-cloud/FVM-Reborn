@@ -1,3 +1,7 @@
+if global.is_paused{
+	exit
+}
+
 // Inherit the parent event
 if skipped or hp <= 0{
 	sprite_index = spr_machine_skateboard_mouse

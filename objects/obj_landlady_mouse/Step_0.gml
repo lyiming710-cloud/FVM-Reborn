@@ -1,3 +1,7 @@
+if global.is_paused{
+	exit
+}
+
 // Inherit the parent event
 
 if shield_hp > 0{

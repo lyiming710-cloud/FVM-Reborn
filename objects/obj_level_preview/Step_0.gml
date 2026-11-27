@@ -71,6 +71,10 @@ if (preview_dirty){
 	preview_dirty = false;
 }
 
-if (!global.console_open && keyboard_check_pressed(vk_escape)) || mouse_check_button_pressed(mb_right){
-	instance_destroy();
+var _preview_esc = !global.console_open && keyboard_check_pressed(vk_escape);
+var _preview_right_click = mouse_check_button_pressed(mb_right);
+if (_preview_esc || _preview_right_click){
+    if (_preview_esc) keyboard_clear(vk_escape);
+    if (_preview_right_click) mouse_clear(mb_right);
+    instance_destroy();
 }

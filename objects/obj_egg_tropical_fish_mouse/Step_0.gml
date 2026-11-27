@@ -1,3 +1,7 @@
+if global.is_paused{
+	exit
+}
+
 // Inherit the parent event
 if (grid_col < 0 || grid_col >= global.grid_cols || grid_row < 0 || grid_row >= global.grid_rows) {
 	if hp > maxhp - helmet_hp{

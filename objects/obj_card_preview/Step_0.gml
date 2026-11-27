@@ -1,18 +1,20 @@
 // obj_plant_preview STEP 事件
+var _pointer_x = (os_type == os_ios) ? global.pointer_input.x : mouse_x;
+var _pointer_y = (os_type == os_ios) ? global.pointer_input.y : mouse_y;
 var found_plat = noone;
 platform_shift_x = 0;
 platform_shift_y = 0;
 var logical_col = -1;
 var logical_row = -1;
-var grid_pos_visual = get_grid_position_from_world(mouse_x, mouse_y);
+var grid_pos_visual = get_grid_position_from_world(_pointer_x, _pointer_y);
 var direct_in_platform = false;
 
 with (obj_platform) {
     var is_axis_x = (variable_instance_exists(id, "move_axis") && move_axis == "x");
     var shift_x = is_axis_x ? visual_x_shift : 0;
     var shift_y = (!is_axis_x) ? visual_y_shift : 0;
-    var adj_x = mouse_x - shift_x;
-    var adj_y = mouse_y - shift_y;
+    var adj_x = _pointer_x - shift_x;
+    var adj_y = _pointer_y - shift_y;
     var grid_pos_adj = get_grid_position_from_world(adj_x, adj_y);
 
     var c_off = is_axis_x ? current_offset : 0;
@@ -52,8 +54,8 @@ if (found_plat == noone) {
 var logical_world = get_world_position_from_grid(logical_col, logical_row);
 
 // 跟随鼠标移动
-x = mouse_x;
-y = mouse_y;
+x = _pointer_x;
+y = _pointer_y;
 logical_base_x = logical_world.x;
 logical_base_y = logical_world.y;
 

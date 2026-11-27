@@ -181,21 +181,9 @@ function try_place_once(){
 			else if global.grid_terrains[logical_row][logical_col].type == "water"{
 				global.audio.play(snd_enter_water,0,0)
 			}
-            // 取消选择
-            is_selected = false;
-            if (selected_preview != noone && instance_exists(selected_preview)) {
-                instance_destroy(selected_preview);
-            }
-            selected_preview = noone;
-            global.selected_slot = noone;
-        }
-		else if global.quick_placement{
-			// 取消选择
-            is_selected = false;
-            if (selected_preview != noone && instance_exists(selected_preview)) {
-                instance_destroy(selected_preview);
-            }
-            selected_preview = noone;
-            global.selected_slot = noone;
-		}
-}
+	            deselect_slot();
+	        }
+			else if global.quick_placement{
+				deselect_slot();
+			}
+	}

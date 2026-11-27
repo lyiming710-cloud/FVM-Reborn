@@ -1,3 +1,7 @@
+if global.is_paused{
+	exit
+}
+
 // Inherit the parent event
 if hp <= 0 && state != ENEMY_STATE.DEAD{
 	sprite_index = spr_little_armour_mouse

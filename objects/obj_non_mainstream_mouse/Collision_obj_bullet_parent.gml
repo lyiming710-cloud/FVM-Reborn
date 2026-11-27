@@ -1,3 +1,7 @@
+if (global.is_paused) {
+    exit;
+}
+
 if state != ENEMY_STATE.ATTACK && state != ENEMY_STATE.ACTING && dance_cooldown <= 0 && hp > 0 && state != ENEMY_STATE.DEAD{
 	timer = 0
 	state = ENEMY_STATE.ACTING

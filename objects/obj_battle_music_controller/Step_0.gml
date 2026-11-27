@@ -1,10 +1,13 @@
-if audio_is_paused(battle_music) and not global.is_paused{
+var _synthetic_pause = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
+var _battle_paused = global.is_paused && !_synthetic_pause;
+
+if audio_is_paused(battle_music) and not _battle_paused{
 	audio_resume_sound(battle_music)
 }
-if not audio_is_playing(battle_music) and not global.is_paused{
+if not audio_is_playing(battle_music) and not _battle_paused{
 	audio_play_sound(battle_music,0,0)
 }
-if audio_is_playing(battle_music) and global.is_paused{
+if audio_is_playing(battle_music) and _battle_paused{
 	audio_pause_sound(battle_music)
 }
 
