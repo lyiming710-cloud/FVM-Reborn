@@ -1,9 +1,21 @@
 // 强制清除application_surface，避免上一房间图像残留
-surface_set_target(application_surface);
-draw_clear_alpha(c_black, 0); // 用透明黑色清除surface，alpha值0表示完全透明
-surface_reset_target();
+// ⚠️ application_surface 可能短暂失效（值为 -1），直接用会抛 surface target does not exist
+if (surface_exists(application_surface)){
+	surface_set_target(application_surface);
+	draw_clear_alpha(c_black, 0); // 用透明黑色清除surface，alpha值0表示完全透明
+	surface_reset_target();
+}
 
 depth = 50
+
+// 关卡引导提示：沙漠两关没带关键卡片时，备战房间的确认窗点「确定」会写入 global.level_guide_tip
+// （见 obj_battlestart_button 的 Click 事件）。这里延后 1 秒再弹，避开换房黑场
+guide_tip_text = ""
+if (variable_global_exists("level_guide_tip") && is_string(global.level_guide_tip) && global.level_guide_tip != ""){
+	guide_tip_text = global.level_guide_tip
+	global.level_guide_tip = ""
+	alarm[0] = 60
+}
 
 instance_create_depth(0,0,-900,obj_flame_manager)
 instance_create_depth(0,0,0,obj_event_manager)
@@ -28,6 +40,9 @@ global.grid_cell_size_y = 116
 global.grid_offset_y = 228
 global.grid_cols = global.level_file.map_cols
 global.grid_rows = global.level_file.map_rows
+
+// 飞碟鼠技能3的全场减伤比例（0 = 无减免）；每场战斗开始一律清零，避免跨局残留
+global.enemy_damage_reduction = 0
 
 
 //啃食音效

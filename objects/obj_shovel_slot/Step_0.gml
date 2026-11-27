@@ -1,6 +1,6 @@
 // 控制悬停提示透明度
 var _simulation_skip = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
-if (global.is_paused && !_simulation_skip) {
+if (global.is_paused && (global.show_menu || global.game_over)) {
 	exit
 }
 var slot_key = global.keybind_map[? "铲子"];
@@ -22,7 +22,7 @@ if (_input_left_pressed) {
 		global.audio.play(snd_shovel,0,0)
     }
 }
-if keyboard_check_pressed(slot_key){
+if !global.console_open && keyboard_check_pressed(slot_key){
 	if !is_selected{
 		select_shovel();
 		hotkey_pressed = true
@@ -32,7 +32,7 @@ if keyboard_check_pressed(slot_key){
 		deselect_shovel();
 	}
 }
-if ((mouse_check_button_pressed(mb_right) or keyboard_check_pressed(vk_escape)) && is_selected) {
+if ((mouse_check_button_pressed(mb_right) or (!global.console_open && keyboard_check_pressed(vk_escape))) && is_selected) {
     deselect_shovel();
 }
 // 在铲子槽对象 (obj_shovel_slot) 的鼠标点击处理中添加:

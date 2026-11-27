@@ -55,7 +55,7 @@ if (os_type == os_ios && instance_exists(obj_battle)) {
 }
 
 // obj_battle_pause_manager - Step Event
-if (keyboard_check_pressed(vk_space) || virtual_pause_pressed || (mouse_check_button_pressed(mb_left) && global.game_over)) {
+if ((!global.console_open && keyboard_check_pressed(vk_space)) || virtual_pause_pressed || (!global.console_open && mouse_check_button_pressed(mb_left) && global.game_over)) {
     virtual_pause_pressed = false;
     //if global.selected_slot == noone {
         if (!_battle_paused) {
@@ -174,7 +174,7 @@ if (keyboard_check_pressed(vk_space) || virtual_pause_pressed || (mouse_check_bu
 
 // ESC is owned by this manager only. This prevents the pause menu and
 // manager from both reacting to the same keypress in one frame.
-var _esc_key_pressed = keyboard_check_pressed(vk_escape);
+var _esc_key_pressed = !global.console_open && keyboard_check_pressed(vk_escape);
 if (_esc_key_pressed || virtual_esc_pressed) {
     virtual_esc_pressed = false;
     var _esc_handled = false;
@@ -212,7 +212,7 @@ if (_esc_key_pressed || virtual_esc_pressed) {
     }
 }
 
-if (keyboard_check_pressed(ord("R"))) {
+if (!global.console_open && keyboard_check_pressed(ord("R"))) {
 	if global.game_over{
 		if obj_game_over.sprite_index == spr_lose{
 			room_transition_start(room)   // 重开本局也走淡出淡入

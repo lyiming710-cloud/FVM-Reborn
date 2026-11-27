@@ -2,6 +2,9 @@
 image_xscale = 0.9
 image_yscale = 0.9
 menu_type = 0
+// 致谢按钮（spr_credits_btn，左中锚点、2 倍绘制成 60×40）挂在全屏按钮正上方：
+// 与全屏按钮同一左沿 x+385，中心 y = 73 - 40 = 33
+instance_create_depth(x + 405,y + 35,depth-1,obj_credits_btn)
 instance_create_depth(x + 385,y + 73,depth-1,obj_fullscreen_btn)
 instance_create_depth(x + 362,y + 113,depth-1,obj_edit_btn)
 instance_create_depth(x + 339,y + 153,depth-1,obj_config_btn)

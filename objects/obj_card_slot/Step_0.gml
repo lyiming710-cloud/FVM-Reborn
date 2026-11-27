@@ -1,6 +1,6 @@
 //step事件
 var _simulation_skip = variable_global_exists("battle_skip_frame") && global.battle_skip_frame;
-if (global.is_paused && !_simulation_skip) {
+if (global.is_paused && (global.show_menu || global.game_over)) {
 	exit
 }
 
@@ -30,7 +30,9 @@ if (!_simulation_skip) {
     	cooldown_timer = cooldown
     }
     if cooldown_timer < cooldown{
-    	cooldown_timer ++
+    	if (!global.is_paused){
+    		cooldown_timer ++
+    	}
     
     
         // 冷却中状态
@@ -89,7 +91,7 @@ if (_input_left_pressed) {
 
 var slot_key = global.keybind_map[? "卡槽" + string(slot_index)];
 
-if keyboard_check_pressed(slot_key) && is_ready{
+if !global.console_open && keyboard_check_pressed(slot_key) && is_ready{
         // 选中当前卡槽
 		if !is_selected{
 			select_slot()
@@ -124,9 +126,9 @@ if (is_selected) {
     }
     
     // 右键取消选择
-	    if (mouse_check_button_pressed(mb_right)) or (keyboard_check_pressed(vk_escape)) {
-	        deselect_slot();
-	    }
+    if (mouse_check_button_pressed(mb_right)) or (!global.console_open && keyboard_check_pressed(vk_escape)) {
+        deselect_slot();
+    }
     
     // 左键尝试放置植物
 	    if (_input_left_pressed && _clicked_tool_slot == noone) {
